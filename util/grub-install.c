@@ -74,6 +74,7 @@ static char *memdisk = NULL;
 static int have_load_cfg = 0;
 static FILE * load_cfg_f = NULL;
 static char *load_cfg;
+static char *embed_cfg = NULL;
 static int install_bootsector = 1;
 static char *label_font;
 static char *label_color;
@@ -100,6 +101,7 @@ enum
     OPTION_BOOTLOADER_ID, 
     OPTION_EFI_DIRECTORY,
     OPTION_MEMDISK,
+    OPTION_EMBED_CFG,
     OPTION_FONT,
     OPTION_DEBUG,
     OPTION_DEBUG_IMAGE,
@@ -188,6 +190,11 @@ argp_parser (int key, char *arg, struct argp_state *state)
       memdisk = xstrdup (arg);
       return 0;
 
+    case OPTION_EMBED_CFG:
+      free (embed_cfg);
+      embed_cfg = xstrdup (arg);
+      return 0;
+
     case OPTION_DISK_MODULE:
       free (disk_module);
       disk_module = xstrdup (arg);
@@ -264,6 +271,7 @@ static struct argp_option options[] = {
    /* TRANSLATORS: "TARGET" as in "target platform".  */
    0, N_("install GRUB for TARGET platform [default=%s]; available targets: %s"), 2},
   {"memdisk", OPTION_MEMDISK, N_("FILE"), OPTION_HIDDEN, 0, 2},
+  {"embedded-config", OPTION_EMBED_CFG, N_("FILE"), OPTION_HIDDEN, 0, 2},
   {"grub-setup", OPTION_SETUP, "FILE", OPTION_HIDDEN, 0, 2},
   {"grub-mkrelpath", OPTION_MKRELPATH, "FILE", OPTION_HIDDEN, 0, 2},
   {"grub-mkdevicemap", OPTION_MKDEVICEMAP, "FILE", OPTION_HIDDEN, 0, 2},
@@ -1630,7 +1638,17 @@ main (int argc, char *argv[])
     grub_util_error ("%s", _("You've found a bug"));
 
   if (load_cfg_f)
-    fclose (load_cfg_f);
+    {
+      if (embed_cfg)
+        {
+          size_t size = grub_util_get_image_size(embed_cfg);
+          char *embed_cfg_data = grub_util_read_image(embed_cfg);
+          grub_util_write_image(embed_cfg_data, size, load_cfg_f, load_cfg);
+          free(embed_cfg_data);
+        }
+      
+      fclose (load_cfg_f);
+    }
 
   char *imgfile = grub_util_path_concat (2, platdir,
 				       core_name);
