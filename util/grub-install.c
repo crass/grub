@@ -70,6 +70,7 @@ static int force = 0;
 static int have_abstractions = 0;
 static int have_cryptodisk = 0;
 static char * bootloader_id;
+static char *memdisk = NULL;
 static int have_load_cfg = 0;
 static FILE * load_cfg_f = NULL;
 static char *load_cfg;
@@ -98,6 +99,7 @@ enum
     OPTION_REMOVABLE, 
     OPTION_BOOTLOADER_ID, 
     OPTION_EFI_DIRECTORY,
+    OPTION_MEMDISK,
     OPTION_FONT,
     OPTION_DEBUG,
     OPTION_DEBUG_IMAGE,
@@ -181,6 +183,11 @@ argp_parser (int key, char *arg, struct argp_state *state)
       efidir = xstrdup (arg);
       return 0;
 
+    case OPTION_MEMDISK:
+      free (memdisk);
+      memdisk = xstrdup (arg);
+      return 0;
+
     case OPTION_DISK_MODULE:
       free (disk_module);
       disk_module = xstrdup (arg);
@@ -256,6 +263,7 @@ static struct argp_option options[] = {
   {"target", OPTION_TARGET, N_("TARGET"),
    /* TRANSLATORS: "TARGET" as in "target platform".  */
    0, N_("install GRUB for TARGET platform [default=%s]; available targets: %s"), 2},
+  {"memdisk", OPTION_MEMDISK, N_("FILE"), OPTION_HIDDEN, 0, 2},
   {"grub-setup", OPTION_SETUP, "FILE", OPTION_HIDDEN, 0, 2},
   {"grub-mkrelpath", OPTION_MKRELPATH, "FILE", OPTION_HIDDEN, 0, 2},
   {"grub-mkdevicemap", OPTION_MKDEVICEMAP, "FILE", OPTION_HIDDEN, 0, 2},
@@ -1631,7 +1639,7 @@ main (int argc, char *argv[])
   grub_install_make_image_wrap (/* source dir  */ grub_install_source_directory,
 				/*prefix */ prefix,
 				/* output */ imgfile,
-				/* memdisk */ NULL,
+				/* memdisk */ memdisk,
 				have_load_cfg ? load_cfg : NULL,
 				/* image target */ mkimage_target, 0);
   /* Backward-compatibility kludges.  */
@@ -1661,7 +1669,7 @@ main (int argc, char *argv[])
 	grub_install_make_image_wrap (/* source dir  */ grub_install_source_directory,
 				      /* prefix */ "",
 				       /* output */ dst,
-				       /* memdisk */ NULL,
+				       /* memdisk */ memdisk,
 				      have_load_cfg ? load_cfg : NULL,
 				       /* image target */ mkimage_target, 0);
       }
