@@ -981,14 +981,15 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
       args = argv.args + 2;
       cmdname = argv.args[1];
     }
-  grubcmd = grub_command_find (cmdname);
-  if (! grubcmd)
+  /* Allow user functions to override built in commands. */
+  func = grub_script_function_find (cmdname);
+  if (! func)
     {
       grub_errno = GRUB_ERR_NONE;
 
-      /* It's not a GRUB command, try all functions.  */
-      func = grub_script_function_find (cmdname);
-      if (! func)
+      /* It's not a function, check if GRUB command.  */
+      grubcmd = grub_command_find (cmdname);
+      if (! grubcmd)
 	{
 	  /* As a last resort, try if it is an assignment.  */
 	  char *assign = grub_strdup (cmdname);
@@ -1004,6 +1005,11 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
 	      eq++;
 	      grub_script_env_set (assign, eq);
 	    }
+	  else
+	    {
+	      /* Not an assignment, notify the user that the command was not found */
+	      grub_error(GRUB_ERR_UNKNOWN_COMMAND, N_("can't find command `%s'"), cmdname);
+	    }
 	  grub_free (assign);
 
 	  grub_snprintf (errnobuf, sizeof (errnobuf), "%d", grub_errno);
@@ -1017,7 +1023,9 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
     }
 
   /* Execute the GRUB command or function.  */
-  if (grubcmd)
+  if (func)
+    ret = grub_script_function_call (func, argc, args);
+  else
     {
       if (grub_extractor_level && !(grubcmd->flags
 				    & GRUB_COMMAND_FLAG_EXTRACTOR))
@@ -1030,8 +1038,6 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
       else
 	ret = (grubcmd->func) (grubcmd, argc, args);
     }
-  else
-    ret = grub_script_function_call (func, argc, args);
 
   if (invert)
     {
