@@ -928,7 +928,7 @@ grub_err_t
 grub_script_execute_cmdline (struct grub_script_cmd *cmd)
 {
   struct grub_script_cmdline *cmdline = (struct grub_script_cmdline *) cmd;
-  grub_command_t grubcmd;
+  grub_command_t grubcmd = 0;
   grub_err_t ret = 0;
   grub_script_function_t func = 0;
   char errnobuf[18];
@@ -937,6 +937,7 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
   unsigned int i;
   char **args;
   int invert;
+  int builtin;
   struct grub_script_argv argv = { 0, 0, 0 };
 
   /* Lookup the command.  */
@@ -963,11 +964,10 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
   cmdstring[cmdlen - 1] = '\0';
   grub_verify_string (cmdstring, GRUB_VERIFY_COMMAND);
   grub_free (cmdstring);
-  invert = 0;
-  argc = argv.argc - 1;
-  args = argv.args + 1;
   cmdname = argv.args[0];
-  if (grub_strcmp (cmdname, "!") == 0)
+  invert = !grub_strcmp (cmdname, "!");
+  builtin = !grub_strcmp (cmdname, "builtin");
+  if (invert || builtin)
     {
       if (argv.argc < 2 || ! argv.args[1])
 	{
@@ -976,14 +976,19 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
 			     N_("no command is specified"));
 	}
 
-      invert = 1;
-      argc = argv.argc - 2;
-      args = argv.args + 2;
-      cmdname = argv.args[1];
+      argc = argv.argc - (1 + invert + builtin);
+      args = argv.args + 1 + invert + builtin;
+      cmdname = argv.args[invert + builtin];
+    }
+  else
+    {
+      argc = argv.argc - 1;
+      args = argv.args + 1;
     }
   /* Allow user functions to override built in commands. */
-  func = grub_script_function_find (cmdname);
-  if (! func)
+  if (! builtin)
+    func = grub_script_function_find (cmdname);
+  if (! func || builtin)
     {
       grub_errno = GRUB_ERR_NONE;
 
