@@ -993,7 +993,7 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
       grub_errno = GRUB_ERR_NONE;
 
       /* It's not a function, check if GRUB command.  */
-      grubcmd = grub_command_find (cmdname);
+      grubcmd = grub_command_find ((cmdname[0] == '@')?(cmdname+1):cmdname);
       if (! grubcmd)
 	{
 	  /* As a last resort, try if it is an assignment.  */
