@@ -65,8 +65,7 @@ gcry_err_code_t AF_merge (const gcry_md_spec_t * hash, grub_uint8_t * src,
 			  grub_size_t blocknumbers);
 
 static grub_cryptodisk_t
-configure_ciphers (grub_disk_t disk, const char *check_uuid,
-		   int check_boot)
+luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
 {
   grub_cryptodisk_t newdev;
   struct grub_luks_phdr header;
@@ -299,7 +298,7 @@ luks_recover_key (grub_disk_t source,
 }
 
 struct grub_cryptodisk_dev luks_crypto = {
-  .scan = configure_ciphers,
+  .scan = luks_scan,
   .recover_key = luks_recover_key
 };
 
