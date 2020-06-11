@@ -66,7 +66,8 @@ gcry_err_code_t AF_merge (const gcry_md_spec_t * hash, grub_uint8_t * src,
 			  grub_size_t blocknumbers);
 
 static grub_cryptodisk_t
-luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
+luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot,
+	   grub_file_t hdr)
 {
   grub_cryptodisk_t newdev;
   const char *iptr;
@@ -77,6 +78,10 @@ luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
   char ciphermode[sizeof (header.cipherMode) + 1];
   char hashspec[sizeof (header.hashSpec) + 1];
   grub_err_t err;
+
+  /* Detached headers are not implemented yet */
+  if (hdr)
+    return NULL;
 
   if (check_boot)
     return NULL;
@@ -151,8 +156,7 @@ luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
 }
 
 static grub_err_t
-luks_recover_key (grub_disk_t source,
-		  grub_cryptodisk_t dev)
+luks_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
 {
   struct grub_luks_phdr header;
   grub_size_t keysize;
@@ -164,6 +168,10 @@ luks_recover_key (grub_disk_t source,
   grub_err_t err;
   grub_size_t max_stripes = 1;
   char *tmp;
+
+  /* Detached headers are not implemented yet */
+  if (hdr)
+    return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   err = grub_disk_read (source, 0, 0, sizeof (header), &header);
   if (err)

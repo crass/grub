@@ -52,6 +52,7 @@
 #include <grub/dl.h>
 #include <grub/err.h>
 #include <grub/disk.h>
+#include <grub/file.h>
 #include <grub/crypto.h>
 #include <grub/partition.h>
 #include <grub/i18n.h>
@@ -121,6 +122,7 @@ enum
 
 /* FIXME: support version 0.  */
 /* FIXME: support big-endian pre-version-4 volumes.  */
+/* FIXME: support for detached headers.  */
 /* FIXME: support for keyfiles.  */
 /* FIXME: support for HMAC.  */
 const char *algorithms[] = {
@@ -242,7 +244,8 @@ grub_util_get_geli_uuid (const char *dev)
 #endif
 
 static grub_cryptodisk_t
-geli_scan (grub_disk_t disk, const char *check_uuid, int boot_only)
+geli_scan (grub_disk_t disk, const char *check_uuid, int boot_only,
+	   grub_file_t hdr)
 {
   grub_cryptodisk_t newdev;
   struct grub_geli_phdr header;
@@ -253,6 +256,10 @@ geli_scan (grub_disk_t disk, const char *check_uuid, int boot_only)
   char uuid[GRUB_CRYPTODISK_MAX_UUID_LENGTH];
   grub_disk_addr_t sector;
   grub_err_t err;
+
+  /* Detached headers are not implemented yet */
+  if (hdr)
+    return NULL;
 
   if (2 * GRUB_MD_SHA256->mdlen + 1 > GRUB_CRYPTODISK_MAX_UUID_LENGTH)
     return NULL;
@@ -397,7 +404,7 @@ geli_scan (grub_disk_t disk, const char *check_uuid, int boot_only)
 }
 
 static grub_err_t
-geli_recover_key (grub_disk_t source, grub_cryptodisk_t dev)
+geli_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
 {
   grub_size_t keysize;
   grub_uint8_t digest[GRUB_CRYPTO_MAX_MDLEN];
@@ -412,6 +419,10 @@ geli_recover_key (grub_disk_t source, grub_cryptodisk_t dev)
   char *tmp;
   grub_disk_addr_t sector;
   grub_err_t err;
+
+  /* Detached headers are not implemented yet */
+  if (hdr)
+    return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   if (dev->cipher->cipher->blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)
     return grub_error (GRUB_ERR_BUG, "cipher block is too long");
