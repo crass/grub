@@ -23,6 +23,7 @@
 #include <grub/dl.h>
 #include <grub/err.h>
 #include <grub/disk.h>
+#include <grub/file.h>
 #include <grub/crypto.h>
 #include <grub/partition.h>
 #include <grub/i18n.h>
@@ -77,17 +78,23 @@ luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot,
   char ciphername[sizeof (header.cipherName) + 1];
   char ciphermode[sizeof (header.cipherMode) + 1];
   char hashspec[sizeof (header.hashSpec) + 1];
-  grub_err_t err;
-
-  /* Detached headers are not implemented yet */
-  if (hdr)
-    return NULL;
+  grub_err_t err = GRUB_ERR_NONE;
 
   if (check_boot)
     return NULL;
 
   /* Read the LUKS header.  */
-  err = grub_disk_read (disk, 0, 0, sizeof (header), &header);
+  if (hdr)
+    {
+      if (grub_file_seek (hdr, 0) == (grub_off_t) -1)
+	return NULL;
+
+      if (grub_file_read (hdr, &header, sizeof (header)) != sizeof (header))
+	return NULL;
+    }
+  else
+    err = grub_disk_read (disk, 0, 0, sizeof (header), &header);
+
   if (err)
     {
       if (err == GRUB_ERR_OUT_OF_RANGE)
@@ -165,15 +172,22 @@ luks_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
   grub_uint8_t candidate_digest[sizeof (header.mkDigest)];
   unsigned i;
   grub_size_t length;
-  grub_err_t err;
+  grub_err_t err = GRUB_ERR_NONE;
   grub_size_t max_stripes = 1;
   char *tmp;
+  grub_uint32_t sector;
 
-  /* Detached headers are not implemented yet */
   if (hdr)
-    return GRUB_ERR_NOT_IMPLEMENTED_YET;
+    {
+      if (grub_file_seek (hdr, 0) == (grub_off_t) -1)
+	return grub_errno;
 
-  err = grub_disk_read (source, 0, 0, sizeof (header), &header);
+      if (grub_file_read (hdr, &header, sizeof (header)) != sizeof (header))
+	return grub_errno;
+    }
+  else
+    err = grub_disk_read (source, 0, 0, sizeof (header), &header);
+
   if (err)
     return err;
 
@@ -242,13 +256,19 @@ luks_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
 	  return grub_crypto_gcry_error (gcry_err);
 	}
 
+      sector = grub_be_to_cpu32 (header.keyblock[i].keyMaterialOffset);
       length = (keysize * grub_be_to_cpu32 (header.keyblock[i].stripes));
 
       /* Read and decrypt the key material from the disk.  */
-      err = grub_disk_read (source,
-			    grub_be_to_cpu32 (header.keyblock
-					      [i].keyMaterialOffset), 0,
-			    length, split_key);
+      if (hdr)
+      {
+        if (grub_file_seek (hdr, sector * 512))
+          return grub_errno;
+        if (grub_file_read (hdr, split_key, length) != (grub_ssize_t)length)
+          return grub_errno;
+      }
+      else
+        err = grub_disk_read (source, sector, 0, length, split_key);
       if (err)
 	{
 	  grub_free (split_key);
