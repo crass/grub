@@ -345,10 +345,15 @@ luks2_read_header (grub_disk_t disk, grub_luks2_header_t *outhdr)
 }
 
 static grub_cryptodisk_t
-luks2_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
+luks2_scan (grub_disk_t disk, const char *check_uuid, int check_boot,
+	    grub_file_t hdr_file)
 {
   grub_cryptodisk_t cryptodisk;
   grub_luks2_header_t header;
+
+  /* Detached headers are not implemented yet */
+  if (hdr_file)
+    return NULL;
 
   if (check_boot)
     return NULL;
@@ -520,8 +525,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 }
 
 static grub_err_t
-luks2_recover_key (grub_disk_t source,
-		   grub_cryptodisk_t crypt)
+luks2_recover_key (grub_disk_t source, grub_cryptodisk_t crypt,
+		   grub_file_t hdr_file)
 {
   grub_uint8_t candidate_key[GRUB_CRYPTODISK_MAX_KEYLEN];
   char passphrase[MAX_PASSPHRASE], cipher[32];
@@ -534,6 +539,10 @@ luks2_recover_key (grub_disk_t source,
   gcry_err_code_t gcry_ret;
   grub_json_t *json = NULL, keyslots;
   grub_err_t ret;
+
+  /* Detached headers are not implemented yet */
+  if (hdr_file)
+    return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   ret = luks2_read_header (source, &header);
   if (ret)
