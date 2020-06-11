@@ -163,7 +163,8 @@ luks_scan (grub_disk_t disk, const char *check_uuid, int check_boot,
 }
 
 static grub_err_t
-luks_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
+luks_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr,
+		  grub_uint8_t *keyfile_bytes, grub_size_t keyfile_bytes_size)
 {
   struct grub_luks_phdr header;
   grub_size_t keysize;
@@ -176,6 +177,10 @@ luks_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
   grub_size_t max_stripes = 1;
   char *tmp;
   grub_uint32_t sector;
+
+  /* Keyfiles are not implemented yet */
+  if (keyfile_bytes || keyfile_bytes_size)
+     return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   if (hdr)
     {

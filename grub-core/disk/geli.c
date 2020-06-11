@@ -404,7 +404,8 @@ geli_scan (grub_disk_t disk, const char *check_uuid, int boot_only,
 }
 
 static grub_err_t
-geli_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
+geli_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr,
+		  grub_uint8_t *key, grub_size_t keyfile_size)
 {
   grub_size_t keysize;
   grub_uint8_t digest[GRUB_CRYPTO_MAX_MDLEN];
@@ -420,8 +421,8 @@ geli_recover_key (grub_disk_t source, grub_cryptodisk_t dev, grub_file_t hdr)
   grub_disk_addr_t sector;
   grub_err_t err;
 
-  /* Detached headers are not implemented yet */
-  if (hdr)
+  /* Detached headers and keyfiles are not implemented yet */
+  if (hdr || key || keyfile_size)
     return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   if (dev->cipher->cipher->blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)

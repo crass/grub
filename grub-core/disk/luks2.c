@@ -534,7 +534,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 
 static grub_err_t
 luks2_recover_key (grub_disk_t disk, grub_cryptodisk_t crypt,
-		   grub_file_t hdr_file)
+		   grub_file_t hdr_file, grub_uint8_t *key,
+		   grub_size_t keyfile_size)
 {
   grub_uint8_t candidate_key[GRUB_CRYPTODISK_MAX_KEYLEN];
   char passphrase[MAX_PASSPHRASE], cipher[32];
@@ -548,8 +549,8 @@ luks2_recover_key (grub_disk_t disk, grub_cryptodisk_t crypt,
   grub_json_t *json = NULL, keyslots;
   grub_err_t ret;
 
-  /* Detached headers are not implemented yet */
-  if (hdr_file)
+  /* Detached headers and keyfiles are not implemented yet */
+  if (hdr_file || key || keyfile_size)
     return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   ret = luks2_read_header (disk, &header);
