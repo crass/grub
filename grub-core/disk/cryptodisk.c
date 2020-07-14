@@ -757,8 +757,8 @@ grub_cryptodisk_read (grub_disk_t disk, grub_disk_addr_t sector,
 		size, sector, dev->offset);
 
   err = grub_disk_read (dev->source_disk,
-			(sector << (disk->log_sector_size
-				   - GRUB_DISK_SECTOR_BITS)) + dev->offset, 0,
+			((sector + dev->offset) << (disk->log_sector_size
+						   - GRUB_DISK_SECTOR_BITS)), 0,
 			size << disk->log_sector_size, buf);
   if (err)
     {
