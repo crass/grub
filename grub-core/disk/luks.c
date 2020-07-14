@@ -69,10 +69,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
 		   int check_boot)
 {
   grub_cryptodisk_t newdev;
-  const char *iptr;
   struct grub_luks_phdr header;
-  char *optr;
-  char uuid[sizeof (header.uuid) + 1];
   char ciphername[sizeof (header.cipherName) + 1];
   char ciphermode[sizeof (header.cipherMode) + 1];
   char hashspec[sizeof (header.hashSpec) + 1];
@@ -95,18 +92,9 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
       || grub_be_to_cpu16 (header.version) != 1)
     return NULL;
 
-  optr = uuid;
-  for (iptr = header.uuid; iptr < &header.uuid[ARRAY_SIZE (header.uuid)];
-       iptr++)
+  if (check_uuid && grub_uuidcasecmp (check_uuid, header.uuid, sizeof (header.uuid)) != 0)
     {
-      if (*iptr != '-')
-	*optr++ = *iptr;
-    }
-  *optr = 0;
-
-  if (check_uuid && grub_strcasecmp (check_uuid, uuid) != 0)
-    {
-      grub_dprintf ("luks", "%s != %s\n", uuid, check_uuid);
+      grub_dprintf ("luks", "%s != %s\n", header.uuid, check_uuid);
       return NULL;
     }
 
@@ -125,7 +113,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
   newdev->source_disk = NULL;
   newdev->log_sector_size = LUKS_LOG_SECTOR_SIZE;
   newdev->total_length = grub_disk_get_size (disk) - newdev->offset;
-  grub_memcpy (newdev->uuid, uuid, sizeof (newdev->uuid));
+  grub_memcpy (newdev->uuid, header.uuid, sizeof (newdev->uuid));
   newdev->modname = "luks";
 
   /* Configure the hash used for the AF splitter and HMAC.  */
@@ -145,7 +133,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
       return NULL;
     }
 
-  COMPILE_TIME_ASSERT (sizeof (newdev->uuid) >= sizeof (uuid));
+  COMPILE_TIME_ASSERT (sizeof (newdev->uuid) >= sizeof (header.uuid));
   return newdev;
 }
 

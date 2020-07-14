@@ -359,7 +359,7 @@ luks2_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
       return NULL;
     }
 
-  if (check_uuid && grub_strcasecmp (check_uuid, header.uuid) != 0)
+  if (check_uuid && grub_uuidcasecmp (check_uuid, header.uuid, sizeof (header.uuid)) != 0)
     return NULL;
 
   cryptodisk = grub_zalloc (sizeof (*cryptodisk));

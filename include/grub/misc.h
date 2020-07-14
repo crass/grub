@@ -253,6 +253,49 @@ grub_strncasecmp (const char *s1, const char *s2, grub_size_t n)
 }
 
 /*
+ * Do a case insensitive compare of two strings as if they are UUIDs,
+ * checking a maximum of n characters.  If n is negative, check until a
+ * NULL byte is reached on either string.  For the purposes of this function,
+ * a UUID string is considered properly formatted if it conforms to this
+ * regular expression: "-?([^-]+-?)".  This is slightly more restrictive than
+ * necessary as dashes are purely an aestetic formality.  However, this makes
+ * the code simpler and more efficient.  A side-effect, is that some UUID
+ * strings containing multiple sequential dashes may compare false, and will
+ * only compare true (return 0) when both UUID strings with dashes removed
+ * would compare true.
+ */
+static inline int
+grub_uuidcasecmp (const char *uuid1, const char *uuid2, grub_size_t n)
+{
+  int dashdiff = 0;
+  n--;
+
+  while (1)
+    {
+      if (((*uuid1 == '-') && dashdiff < 0) ||
+	  ((*uuid2 == '-') && dashdiff > 0) ||
+	  ((*uuid1 == '-') && (*uuid2 == '-')))
+	n--;
+      if (*uuid1 == '-' && (n+1))
+	uuid1++, dashdiff++;
+      if (*uuid2 == '-' && (n+1))
+	uuid2++, dashdiff--;
+
+      if ((n - grub_abs(dashdiff)) == 0 ||
+	  (*uuid1 == 0 || *uuid2 == 0) ||
+	  (grub_tolower (*uuid1) != grub_tolower (*uuid2)))
+	break;
+
+      uuid1++;
+      uuid2++;
+      n--;
+    }
+
+  return (int) grub_tolower ((grub_uint8_t) *uuid1)
+    - (int) grub_tolower ((grub_uint8_t) *uuid2);
+}
+
+/*
  * Note that these differ from the C standard's definitions of strtol,
  * strtoul(), and strtoull() by the addition of two const qualifiers on the end
  * pointer, which make the declaration match the *semantic* requirements of
