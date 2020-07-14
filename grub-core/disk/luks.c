@@ -123,7 +123,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
       return NULL;
   newdev->offset = grub_be_to_cpu32 (header.payloadOffset);
   newdev->source_disk = NULL;
-  newdev->log_sector_size = 9;
+  newdev->log_sector_size = LUKS_LOG_SECTOR_SIZE;
   newdev->total_length = grub_disk_get_size (disk) - newdev->offset;
   grub_memcpy (newdev->uuid, uuid, sizeof (newdev->uuid));
   newdev->modname = "luks";
@@ -246,7 +246,8 @@ luks_recover_key (grub_disk_t source,
 	  return err;
 	}
 
-      gcry_err = grub_cryptodisk_decrypt (dev, split_key, length, 0);
+      gcry_err = grub_cryptodisk_decrypt (dev, split_key, length, 0,
+					  LUKS_LOG_SECTOR_SIZE);
       if (gcry_err)
 	{
 	  grub_free (split_key);
