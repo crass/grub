@@ -538,9 +538,10 @@ luks2_recover_key (grub_disk_t disk, grub_cryptodisk_t crypt,
 		   grub_size_t keyfile_size)
 {
   grub_uint8_t candidate_key[GRUB_CRYPTODISK_MAX_KEYLEN];
-  char passphrase[MAX_PASSPHRASE], cipher[32];
+  const grub_uint8_t *passphrase = NULL;
+  char interactive_passphrase[MAX_PASSPHRASE] = "", cipher[32];
   char *json_header = NULL, *part = NULL, *ptr;
-  grub_size_t candidate_key_len = 0, i, size;
+  grub_size_t candidate_key_len = 0, passphrase_len = 0, i, size;
   grub_luks2_header_t header;
   grub_luks2_keyslot_t keyslot;
   grub_luks2_digest_t digest;
@@ -549,8 +550,8 @@ luks2_recover_key (grub_disk_t disk, grub_cryptodisk_t crypt,
   grub_json_t *json = NULL, keyslots;
   grub_err_t ret;
 
-  /* Detached headers and keyfiles are not implemented yet */
-  if (hdr_file || key || keyfile_size)
+  /* Detached headers are not implemented yet */
+  if (hdr_file)
     return GRUB_ERR_NOT_IMPLEMENTED_YET;
 
   ret = luks2_read_header (disk, &header);
@@ -578,16 +579,27 @@ luks2_recover_key (grub_disk_t disk, grub_cryptodisk_t crypt,
       goto err;
     }
 
-  /* Get the passphrase from the user. */
-  if (disk->partition)
-    part = grub_partition_get_name (disk->partition);
-  grub_printf_ (N_("Enter passphrase for %s%s%s (%s): "), disk->name,
-		disk->partition ? "," : "", part ? : "",
-		crypt->uuid);
-  if (!grub_password_get (passphrase, MAX_PASSPHRASE))
+  if (key)
     {
-      ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Passphrase not supplied");
-      goto err;
+      /* Use bytestring from key file as passphrase */
+      passphrase = key;
+      passphrase_len = keyfile_size;
+    }
+  else
+    {
+      /* Get the passphrase from the user.  */
+      if (disk->partition)
+	part = grub_partition_get_name (disk->partition);
+      grub_printf_ (N_("Enter passphrase for %s%s%s (%s): "), disk->name,
+		    disk->partition ? "," : "", part ? : "", crypt->uuid);
+      grub_free (part);
+      if (!grub_password_get (interactive_passphrase, MAX_PASSPHRASE))
+	{
+	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Passphrase not supplied");
+	  goto err;
+	}
+      passphrase = (const grub_uint8_t *) interactive_passphrase;
+      passphrase_len = grub_strlen(interactive_passphrase);
     }
 
   if (grub_json_getvalue (&keyslots, json, "keyslots") ||
@@ -623,7 +635,7 @@ luks2_recover_key (grub_disk_t disk, grub_cryptodisk_t crypt,
 	crypt->total_length = grub_strtoull (segment.size, NULL, 10) >> crypt->log_sector_size;
 
       ret = luks2_decrypt_key (candidate_key, disk, crypt, &keyslot,
-			       (const grub_uint8_t *) passphrase, grub_strlen (passphrase));
+			       passphrase, passphrase_len);
       if (ret)
 	{
 	  grub_dprintf ("luks2", "Decryption with keyslot %"PRIuGRUB_SIZE" failed: %s\n",
