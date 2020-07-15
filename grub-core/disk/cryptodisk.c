@@ -753,8 +753,10 @@ grub_cryptodisk_read (grub_disk_t disk, grub_disk_addr_t sector,
 
   grub_dprintf ("cryptodisk",
 		"Reading %" PRIuGRUB_SIZE " sectors from sector 0x%"
-		PRIxGRUB_UINT64_T " with offset of %" PRIuGRUB_UINT64_T "\n",
-		size, sector, dev->offset);
+		PRIxGRUB_UINT64_T " with offset of %" PRIuGRUB_UINT64_T
+		" sectors and sector size of %u on disk (%s)\n",
+		size, sector, dev->offset, 1U << disk->log_sector_size,
+		dev->source_disk->name);
 
   err = grub_disk_read (dev->source_disk,
 			((sector + dev->offset) << (disk->log_sector_size
@@ -803,8 +805,10 @@ grub_cryptodisk_write (grub_disk_t disk, grub_disk_addr_t sector,
 
   grub_dprintf ("cryptodisk",
 		"Writing %" PRIuGRUB_SIZE " sectors to sector 0x%"
-		PRIxGRUB_UINT64_T " with offset of %" PRIuGRUB_UINT64_T "\n",
-		size, sector, dev->offset);
+		PRIxGRUB_UINT64_T " with offset of %" PRIuGRUB_UINT64_T
+		" sectors and sector size of %u on disk (%s)\n",
+		size, sector, dev->offset, 1U << disk->log_sector_size,
+		dev->source_disk->name);
 
   gcry_err = grub_cryptodisk_endecrypt (dev, (grub_uint8_t *) tmp,
 					size << disk->log_sector_size,
