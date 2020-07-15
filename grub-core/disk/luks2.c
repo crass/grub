@@ -614,10 +614,10 @@ luks2_recover_key (grub_disk_t source,
 	 * Convert to cryptodisk sized sectors from source disk sized sectors
 	 * before subtracting the offset, which is in cryptodisk sized sectors.
 	 */
-	crypt->total_length = (grub_disk_get_size (source) >> (crypt->log_sector_size - source->log_sector_size))
+	crypt->total_sectors = (grub_disk_get_size (source) >> (crypt->log_sector_size - source->log_sector_size))
 			       - crypt->offset;
       else
-	crypt->total_length = grub_strtoull (segment.size, NULL, 10) >> crypt->log_sector_size;
+	crypt->total_sectors = grub_strtoull (segment.size, NULL, 10) >> crypt->log_sector_size;
 
       ret = luks2_decrypt_key (candidate_key, source, crypt, &keyslot,
 			       (const grub_uint8_t *) passphrase, grub_strlen (passphrase));
