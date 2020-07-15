@@ -312,13 +312,22 @@ luks2_get_keyslot (grub_luks2_keyslot_t *k, grub_luks2_digest_t *d, grub_luks2_s
 
 /* Determine whether to use primary or secondary header */
 static grub_err_t
-luks2_read_header (grub_disk_t disk, grub_luks2_header_t *outhdr)
+luks2_read_header (grub_disk_t disk, grub_file_t hdr_file, grub_luks2_header_t *outhdr)
 {
   grub_luks2_header_t primary, secondary, *header = &primary;
-  grub_err_t ret;
+  grub_err_t ret = GRUB_ERR_NONE;
 
   /* Read the primary LUKS header. */
-  ret = grub_disk_read (disk, 0, 0, sizeof (primary), &primary);
+  if (hdr_file)
+    {
+      if (grub_file_seek (hdr_file, 0) == (grub_off_t) -1)
+	ret = grub_errno;
+
+      else if (grub_file_read (hdr_file, &primary, sizeof (primary)) != sizeof (primary))
+	ret = grub_errno;
+    }
+  else
+    ret = grub_disk_read (disk, 0, 0, sizeof (primary), &primary);
   if (ret)
     return ret;
 
@@ -328,7 +337,16 @@ luks2_read_header (grub_disk_t disk, grub_luks2_header_t *outhdr)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, "Bad primary signature");
 
   /* Read the secondary header. */
-  ret = grub_disk_read (disk, 0, grub_be_to_cpu64 (primary.hdr_size), sizeof (secondary), &secondary);
+  if (hdr_file)
+    {
+      if (grub_file_seek (hdr_file, grub_be_to_cpu64 (primary.hdr_size)) == (grub_off_t) -1)
+	ret = grub_errno;
+
+      else if (grub_file_read (hdr_file, &secondary, sizeof (secondary)) != sizeof (secondary))
+	ret = grub_errno;
+    }
+  else
+    ret = grub_disk_read (disk, 0, grub_be_to_cpu64 (primary.hdr_size), sizeof (secondary), &secondary);
   if (ret)
     return ret;
 
@@ -351,14 +369,10 @@ luks2_scan (grub_disk_t disk, const char *check_uuid, int check_boot,
   grub_cryptodisk_t cryptodisk;
   grub_luks2_header_t header;
 
-  /* Detached headers are not implemented yet */
-  if (hdr_file)
-    return NULL;
-
   if (check_boot)
     return NULL;
 
-  if (luks2_read_header (disk, &header))
+  if (luks2_read_header (disk, hdr_file, &header))
     {
       grub_errno = GRUB_ERR_NONE;
       return NULL;
@@ -417,7 +431,7 @@ luks2_verify_key (grub_luks2_digest_t *d, grub_uint8_t *candidate_key,
 
 static grub_err_t
 luks2_decrypt_key (grub_uint8_t *out_key,
-		   grub_disk_t source, grub_cryptodisk_t crypt,
+		   grub_disk_t source, grub_cryptodisk_t crypt, grub_file_t hdr_file,
 		   grub_luks2_keyslot_t *k,
 		   const grub_uint8_t *passphrase, grub_size_t passphraselen)
 {
@@ -479,7 +493,17 @@ luks2_decrypt_key (grub_uint8_t *out_key,
     return grub_errno;
 
   grub_errno = GRUB_ERR_NONE;
-  ret = grub_disk_read (source, 0, k->area.offset, k->area.size, split_key);
+  if (hdr_file)
+    {
+      if (grub_file_seek (hdr_file, k->area.offset) == (grub_off_t) -1)
+	ret = grub_errno;
+
+      else if (grub_file_read (hdr_file, split_key, k->area.size) != k->area.size)
+	ret = grub_errno;
+    }
+  else
+    ret = grub_disk_read (source, 0, k->area.offset, k->area.size, split_key);
+
   if (ret)
     {
       grub_error (GRUB_ERR_IO, "Read error: %s\n", grub_errmsg);
@@ -542,11 +566,7 @@ luks2_recover_key (grub_disk_t source, grub_cryptodisk_t crypt,
   grub_json_t *json = NULL, keyslots;
   grub_err_t ret;
 
-  /* Detached headers are not implemented yet */
-  if (hdr_file)
-    return GRUB_ERR_NOT_IMPLEMENTED_YET;
-
-  ret = luks2_read_header (source, &header);
+  ret = luks2_read_header (source, hdr_file, &header);
   if (ret)
     return ret;
 
@@ -555,8 +575,18 @@ luks2_recover_key (grub_disk_t source, grub_cryptodisk_t crypt,
       return GRUB_ERR_OUT_OF_MEMORY;
 
   /* Read the JSON area. */
-  ret = grub_disk_read (source, 0, grub_be_to_cpu64 (header.hdr_offset) + sizeof (header),
-			grub_be_to_cpu64 (header.hdr_size) - sizeof (header), json_header);
+  if (hdr_file)
+    {
+      if (grub_file_seek (hdr_file, grub_be_to_cpu64 (header.hdr_offset) + sizeof (header)) == (grub_off_t) -1)
+	ret = grub_errno;
+
+      else if (grub_file_read (hdr_file, json_header, grub_be_to_cpu64 (header.hdr_size) - sizeof (header)) != (grub_be_to_cpu64 (header.hdr_size) - sizeof (header)))
+	ret = grub_errno;
+    }
+  else
+    ret = grub_disk_read (source, 0, grub_be_to_cpu64 (header.hdr_offset) + sizeof (header),
+			  grub_be_to_cpu64 (header.hdr_size) - sizeof (header), json_header);
+
   if (ret)
       goto err;
 
@@ -638,7 +668,7 @@ luks2_recover_key (grub_disk_t source, grub_cryptodisk_t crypt,
       else
 	crypt->total_sectors = grub_strtoull (segment.size, NULL, 10) >> crypt->log_sector_size;
 
-      ret = luks2_decrypt_key (candidate_key, source, crypt, &keyslot,
+      ret = luks2_decrypt_key (candidate_key, source, crypt, hdr_file, &keyslot,
 			       passphrase, passphrase_len);
       if (ret)
 	{
@@ -689,7 +719,6 @@ luks2_recover_key (grub_disk_t source, grub_cryptodisk_t crypt,
     }
 
  err:
-  grub_free (part);
   grub_free (json_header);
   grub_json_free (json);
   return ret;
