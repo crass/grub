@@ -1196,35 +1196,48 @@ hex (grub_uint8_t val)
 }
 
 /* Open a file named NAME and initialize FILE.  */
+#define STR(s) #s
+#define MAX_ID_PRINT 10000
 static char *
 luks_script_get (grub_size_t *sz)
 {
   grub_cryptodisk_t i;
   grub_size_t size = 0;
   char *ptr, *ret;
+  const char header[] = N_("<type> <devname> <source disk> <uuid> <sector "
+			   "offset> <sector size> <cipher> <key> <options>\n");
+  static char errmsg[] = N_("Can not list more than " STR(MAX_ID_PRINT)
+			    " crypto devices.\n");
 
   *sz = 0;
 
   for (i = cryptodisk_list; i != NULL; i = i->next)
-    if (grub_strcmp (i->modname, "luks") == 0 ||
-	grub_strcmp (i->modname, "luks2") == 0)
+    if (i->id >= MAX_ID_PRINT)
+      {
+	*sz = sizeof (errmsg);
+	return errmsg;
+      }
+    else if (grub_strcmp (i->modname, "luks") == 0 ||
+	     grub_strcmp (i->modname, "luks2") == 0)
       {
 	size += grub_strlen (i->modname);
 	size += sizeof ("_mount");
+	size += sizeof ("crypto");
+	size += grub_strlen (i->source);
 	size += grub_strlen (i->uuid);
 	size += grub_strlen (i->cipher->cipher->name);
-	/* mode + mode_iv + spaces + offset + sector size + ??? + '\n' */
-	size += 5 + 8 + 5 + 20 + 4 + 16 + 1;
+	/* spaces + maxidlen + mode + mode_iv + offset + sector size + ??? + '\n' */
+	size += 7 + sizeof (STR(MAX_ID_PRINT)) + 5 + 8 + 20 + 4 + 16 + 1;
 	if (i->essiv_hash)
 	  size += grub_strlen (i->essiv_hash->name);
 	size += i->keysize * 2;
       }
 
-  ret = grub_malloc (size + 1);
+  ret = grub_malloc (sizeof (header) + size + 1);
   if (!ret)
     return 0;
 
-  ptr = ret;
+  ptr = grub_stpcpy (ret, header);
 
   for (i = cryptodisk_list; i != NULL; i = i->next)
     if (grub_strcmp (i->modname, "luks") == 0 ||
@@ -1234,6 +1247,9 @@ luks_script_get (grub_size_t *sz)
 	const char *iptr;
 	ptr = grub_stpcpy (ptr, i->modname);
 	ptr = grub_stpcpy (ptr, "_mount ");
+	ptr += grub_snprintf (ptr, 8 + sizeof (STR(MAX_ID_PRINT)), "crypto%lu ", i->id);
+	ptr = grub_stpcpy (ptr, i->source);
+	*ptr++ = ' ';
 	ptr = grub_stpcpy (ptr, i->uuid);
 	*ptr++ = ' ';
 	ptr += grub_snprintf (ptr, 21, "%" PRIuGRUB_UINT64_T " ", i->offset);
