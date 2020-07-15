@@ -21,6 +21,7 @@
 #include <grub/misc.h>
 #include <grub/file.h>
 #include <grub/disk.h>
+#include <grub/procfs.h>
 #include <grub/mm.h>
 #include <grub/extcmd.h>
 #include <grub/i18n.h>
@@ -229,6 +230,60 @@ static struct grub_disk_dev grub_loopback_dev =
     .next = 0
   };
 
+
+/* Open a file named NAME and initialize FILE.  */
+#define STR(s) #s
+#define MAX_ID_PRINT 10000
+static char *
+loopbacks_get (grub_size_t *sz)
+{
+  struct grub_loopback *i;
+  grub_size_t size = 0;
+  char *ptr, *ret;
+  const char header[] = N_("<id> <devname> <filename>\n");
+  static char errmsg[] = N_("Can not list more than " STR(MAX_ID_PRINT)
+			    " loopback devices.\n");
+
+  for (i = loopback_list; i != NULL; i = i->next)
+    if (i->id < MAX_ID_PRINT)
+      {
+	/* id + spaces + '\n' */
+	size += sizeof (STR(MAX_ID_PRINT)) + 2 + 1;
+	size += grub_strlen (i->devname);
+	size += grub_strlen (i->file->name);
+      }
+    else
+      {
+	*sz = sizeof (errmsg);
+	return errmsg;
+      }
+
+  ret = grub_malloc (sizeof (header) + size + 1);
+  if (!ret)
+    return 0;
+
+  ptr = grub_stpcpy (ret, header);
+
+  for (i = loopback_list; i != NULL; i = i->next)
+    {
+      ptr += grub_snprintf (ptr, 21, "%lu ", i->id);
+      ptr = grub_stpcpy (ptr, i->devname);
+      *ptr++ = ' ';
+      ptr = grub_stpcpy (ptr, i->file->name);
+      *ptr++ = '\n';
+    }
+  *ptr = '\0';
+  *sz = ptr - ret;
+  return ret;
+}
+
+struct grub_procfs_entry loopbacks =
+{
+  .name = "loopbacks",
+  .get_contents = loopbacks_get
+};
+
+
 static grub_extcmd_t cmd;
 
 GRUB_MOD_INIT(loopback)
@@ -239,6 +294,7 @@ GRUB_MOD_INIT(loopback)
 				 or transformed into drive.  */
 			      N_("Make a virtual drive from a file."), options);
   grub_disk_dev_register (&grub_loopback_dev);
+  grub_procfs_register ("loopbacks", &loopbacks);
 }
 
 GRUB_MOD_FINI(loopback)
