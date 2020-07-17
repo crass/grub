@@ -1430,7 +1430,8 @@ GRUB_MOD_INIT (cryptodisk)
 {
   grub_disk_dev_register (&grub_cryptodisk_dev);
   cmd = grub_register_extcmd ("cryptomount", grub_cmd_cryptomount, 0,
-			      N_("SOURCE|-u UUID|-a|-b|-H file"),
+			      N_("SOURCE [-H file] [-k keyfile] [-O keyoffset]"
+				 " [-S keysize]|-u UUID|-a|-b"),
 			      N_("Mount a crypto device."), options);
   grub_procfs_register ("luks_script", &luks_script);
 }
