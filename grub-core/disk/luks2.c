@@ -606,7 +606,7 @@ luks2_recover_key (grub_disk_t source,
       grub_dprintf ("luks2", "Trying keyslot %"PRIuGRUB_SIZE"\n", i);
 
       /* Set up disk according to keyslot's segment. */
-      crypt->offset = grub_divmod64 (segment.offset, segment.sector_size, NULL);
+      crypt->offset_sectors = grub_divmod64 (segment.offset, segment.sector_size, NULL);
       crypt->log_sector_size = sizeof (unsigned int) * 8
 		- __builtin_clz ((unsigned int) segment.sector_size) - 1;
       if (grub_strcmp (segment.size, "dynamic") == 0)
@@ -615,7 +615,7 @@ luks2_recover_key (grub_disk_t source,
 	 * before subtracting the offset, which is in cryptodisk sized sectors.
 	 */
 	crypt->total_sectors = (grub_disk_get_size (source) >> (crypt->log_sector_size - source->log_sector_size))
-			       - crypt->offset;
+			       - crypt->offset_sectors;
       else
 	crypt->total_sectors = grub_strtoull (segment.size, NULL, 10) >> crypt->log_sector_size;
 

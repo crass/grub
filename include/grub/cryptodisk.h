@@ -77,7 +77,7 @@ struct grub_cryptodisk
   /* The offset number of sectors of the encrypt data on the underlying disk
    * where sectors are the size of this cryptodisk.
    */
-  grub_disk_addr_t offset;
+  grub_disk_addr_t offset_sectors;
   /* Total number of encrypted sectors of size (1<<log_sector_size) */
   grub_disk_addr_t total_sectors;
   grub_disk_t source_disk;

@@ -758,12 +758,12 @@ grub_cryptodisk_read (grub_disk_t disk, grub_disk_addr_t sector,
 		"Reading %" PRIuGRUB_SIZE " sectors from sector 0x%"
 		PRIxGRUB_UINT64_T " with offset of %" PRIuGRUB_UINT64_T
 		" sectors and sector size of %u on disk (%s)\n",
-		size, sector, dev->offset, 1U << disk->log_sector_size,
+		size, sector, dev->offset_sectors, 1U << disk->log_sector_size,
 		dev->source_disk->name);
 
   err = grub_disk_read (dev->source_disk,
-			((sector + dev->offset) << (disk->log_sector_size
-						   - GRUB_DISK_SECTOR_BITS)), 0,
+			((sector + dev->offset_sectors) << (disk->log_sector_size
+							   - GRUB_DISK_SECTOR_BITS)), 0,
 			size << disk->log_sector_size, buf);
   if (err)
     {
@@ -810,7 +810,7 @@ grub_cryptodisk_write (grub_disk_t disk, grub_disk_addr_t sector,
 		"Writing %" PRIuGRUB_SIZE " sectors to sector 0x%"
 		PRIxGRUB_UINT64_T " with offset of %" PRIuGRUB_UINT64_T
 		" sectors and sector size of %u on disk (%s)\n",
-		size, sector, dev->offset, 1U << disk->log_sector_size,
+		size, sector, dev->offset_sectors, 1U << disk->log_sector_size,
 		dev->source_disk->name);
 
   gcry_err = grub_cryptodisk_endecrypt (dev, (grub_uint8_t *) tmp,
@@ -828,7 +828,7 @@ grub_cryptodisk_write (grub_disk_t disk, grub_disk_addr_t sector,
     err = grub_disk_write_weak (dev->source_disk,
 				(sector << (disk->log_sector_size
 					    - GRUB_DISK_SECTOR_BITS))
-				+ dev->offset,
+				+ dev->offset_sectors,
 				0, size << disk->log_sector_size, tmp);
   else
     err = grub_error (GRUB_ERR_BUG, "disk.mod not loaded");
@@ -1259,7 +1259,7 @@ luks_script_get (grub_size_t *sz)
 	*ptr++ = ' ';
 	ptr = grub_stpcpy (ptr, i->uuid);
 	*ptr++ = ' ';
-	ptr += grub_snprintf (ptr, 21, "%" PRIuGRUB_UINT64_T " ", i->offset);
+	ptr += grub_snprintf (ptr, 21, "%" PRIuGRUB_UINT64_T " ", i->offset_sectors);
 	ptr += grub_snprintf (ptr, 6, "%d ", 1 << i->log_sector_size);
 	for (iptr = i->cipher->cipher->name; *iptr; iptr++)
 	  *ptr++ = grub_tolower (*iptr);
