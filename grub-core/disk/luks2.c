@@ -325,7 +325,7 @@ luks2_read_header (grub_disk_t disk, grub_luks2_header_t *outhdr)
   /* Look for LUKS magic sequence.  */
   if (grub_memcmp (primary.magic, LUKS_MAGIC_1ST, sizeof (primary.magic)) ||
       grub_be_to_cpu16 (primary.version) != 2)
-    return GRUB_ERR_BAD_SIGNATURE;
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, "Bad primary signature");
 
   /* Read the secondary header. */
   ret = grub_disk_read (disk, 0, grub_be_to_cpu64 (primary.hdr_size), sizeof (secondary), &secondary);
@@ -335,7 +335,7 @@ luks2_read_header (grub_disk_t disk, grub_luks2_header_t *outhdr)
   /* Look for LUKS magic sequence.  */
   if (grub_memcmp (secondary.magic, LUKS_MAGIC_2ND, sizeof (secondary.magic)) ||
       grub_be_to_cpu16 (secondary.version) != 2)
-    return GRUB_ERR_BAD_SIGNATURE;
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, "Bad secondary signature");
 
   if (grub_be_to_cpu64 (primary.seqid) < grub_be_to_cpu64 (secondary.seqid))
       header = &secondary;
