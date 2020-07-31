@@ -1023,7 +1023,7 @@ grub_script_execute_cmdline (struct grub_script_cmd *cmd)
 	  grub_script_argv_free (&argv);
 	  grub_print_error ();
 
-	  return 0;
+	  return grub_errno;
 	}
     }
 
