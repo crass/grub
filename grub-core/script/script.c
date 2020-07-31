@@ -47,7 +47,7 @@ grub_script_malloc (struct grub_parser_param *state, grub_size_t size)
   if (!mem)
     return 0;
 
-  grub_dprintf ("scripting", "malloc %p\n", mem);
+  grub_dprintf ("alloc", "malloc %p\n", mem);
   mem->next = state->memused;
   state->memused = mem;
   return (void *) &mem->mem;
@@ -62,7 +62,7 @@ grub_script_mem_free (struct grub_script_mem *mem)
   while (mem)
     {
       memfree = mem->next;
-      grub_dprintf ("scripting", "free %p\n", mem);
+      grub_dprintf ("alloc", "free %p\n", mem);
       grub_free (mem);
       mem = memfree;
     }
