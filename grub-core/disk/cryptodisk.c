@@ -1165,7 +1165,7 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
 	    return grub_error (GRUB_ERR_OUT_OF_RANGE,
 			      N_("Key file size exceeds maximum (%"
 				 PRIuGRUB_SIZE ")\n"),
-			      GRUB_CRYPTODISK_MAX_KEYFILE_SIZE);
+			      (grub_uint64_t)GRUB_CRYPTODISK_MAX_KEYFILE_SIZE);
 
 	  if (requested_keyfile_size == 0)
 	    return grub_error (GRUB_ERR_OUT_OF_RANGE,
