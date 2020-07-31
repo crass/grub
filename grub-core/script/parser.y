@@ -17,6 +17,8 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+%define parse.trace
+
 %{
 #include <grub/script_sh.h>
 #include <grub/mm.h>
@@ -27,6 +29,30 @@
 #define YYMALLOC        grub_malloc
 #define YYLTYPE_IS_TRIVIAL      0
 #define YYENABLE_NLS    0
+
+#ifdef GRUB_UTIL
+# include <stdio.h>
+
+#define YYFPRINTF(file, args...) do { \
+    if (grub_debug_enabled ("parser")) \
+      fprintf (file, args); \
+  } while(0)
+
+#else
+
+#define YYFPRINTF(file, args...) do { \
+    if (grub_debug_enabled ("parser")) \
+      grub_printf (args); \
+  } while(0)
+
+#define stdin           ((int*)0)
+#define stdout          ((int*)1)
+#define stderr          ((int*)2)
+typedef int FILE;
+
+#endif
+
+int grub_script_yydebug = 1;
 
 #include "grub_script.tab.h"
 
