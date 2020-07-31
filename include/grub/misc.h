@@ -405,6 +405,31 @@ void EXPORT_FUNC(grub_real_dprintf) (const char *file,
                                      const int line,
                                      const char *condition,
                                      const char *fmt, ...) __attribute__ ((format (GNU_PRINTF, 4, 5)));
+static inline grub_err_t grub_derror (const char *condition,
+                                      grub_err_t n,
+                                      const char *fmt, ...) __attribute__ ((format (GNU_PRINTF, 3, 4)));
+
+static inline grub_err_t
+grub_derror (const char *condition,
+             grub_err_t n,
+             const char *fmt, ...)
+{
+  va_list ap1, ap2;
+
+  va_start (ap1, fmt);
+  va_copy (ap2, ap1);
+  grub_verror(n, fmt, ap1);
+  va_end (ap1);
+  grub_dprintf (condition, "error: ");
+  if (grub_debug_enabled (condition))
+    {
+      grub_vprintf(fmt, ap2);
+      grub_printf("\n");
+    }
+  va_end (ap2);
+
+  return n;
+}
 
 void EXPORT_FUNC(grub_exit) (void) __attribute__ ((noreturn));
 grub_uint64_t EXPORT_FUNC(grub_divmod64) (grub_uint64_t n,
