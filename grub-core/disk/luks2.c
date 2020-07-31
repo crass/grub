@@ -37,6 +37,8 @@ GRUB_MOD_LICENSE ("GPLv3+");
 
 #define MAX_PASSPHRASE 256
 
+#define luks2_derror(n, args...) grub_derror ("luks2", n, args)
+
 enum grub_luks2_kdf_type
 {
   LUKS2_KDF_TYPE_ARGON2I,
@@ -133,55 +135,55 @@ luks2_parse_keyslot (grub_luks2_keyslot_t *out, const grub_json_t *keyslot)
   const char *type;
 
   if (grub_json_getstring (&type, keyslot, "type"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing or invalid keyslot");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing or invalid keyslot");
   else if (grub_strcmp (type, "luks2"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported keyslot type %s", type);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Unsupported keyslot type %s", type);
   else if (grub_json_getint64 (&out->key_size, keyslot, "key_size"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing keyslot information");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing keyslot information");
   if (grub_json_getint64 (&out->priority, keyslot, "priority"))
     out->priority = 1;
 
   if (grub_json_getvalue (&area, keyslot, "area") ||
       grub_json_getstring (&type, &area, "type"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing or invalid key area");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing or invalid key area");
   else if (grub_strcmp (type, "raw"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported key area type: %s", type);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Unsupported key area type: %s", type);
   else if (grub_json_getuint64 (&out->area.offset, &area, "offset") ||
 	   grub_json_getuint64 (&out->area.size, &area, "size") ||
 	   grub_json_getstring (&out->area.encryption, &area, "encryption") ||
 	   grub_json_getint64 (&out->area.key_size, &area, "key_size"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing key area information");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing key area information");
 
   if (grub_json_getvalue (&kdf, keyslot, "kdf") ||
       grub_json_getstring (&type, &kdf, "type") ||
       grub_json_getstring (&out->kdf.salt, &kdf, "salt"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing or invalid KDF");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing or invalid KDF");
   else if (!grub_strcmp (type, "argon2i") || !grub_strcmp (type, "argon2id"))
     {
       out->kdf.type = LUKS2_KDF_TYPE_ARGON2I;
       if (grub_json_getint64 (&out->kdf.u.argon2i.time, &kdf, "time") ||
 	  grub_json_getint64 (&out->kdf.u.argon2i.memory, &kdf, "memory") ||
 	  grub_json_getint64 (&out->kdf.u.argon2i.cpus, &kdf, "cpus"))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing Argon2i parameters");
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing Argon2i parameters");
     }
   else if (!grub_strcmp (type, "pbkdf2"))
     {
       out->kdf.type = LUKS2_KDF_TYPE_PBKDF2;
       if (grub_json_getstring (&out->kdf.u.pbkdf2.hash, &kdf, "hash") ||
 	  grub_json_getint64 (&out->kdf.u.pbkdf2.iterations, &kdf, "iterations"))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing PBKDF2 parameters");
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing PBKDF2 parameters");
     }
   else
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported KDF type %s", type);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Unsupported KDF type %s", type);
 
   if (grub_json_getvalue (&af, keyslot, "af") ||
       grub_json_getstring (&type, &af, "type"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "missing or invalid area");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "missing or invalid area");
   if (grub_strcmp (type, "luks1"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported AF type %s", type);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Unsupported AF type %s", type);
   if (grub_json_getint64 (&out->af.stripes, &af, "stripes") ||
       grub_json_getstring (&out->af.hash, &af, "hash"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing AF parameters");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing AF parameters");
 
   return GRUB_ERR_NONE;
 }
@@ -192,15 +194,15 @@ luks2_parse_segment (grub_luks2_segment_t *out, const grub_json_t *segment)
   const char *type;
 
   if (grub_json_getstring (&type, segment, "type"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid segment type");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid segment type");
   else if (grub_strcmp (type, "crypt"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported segment type %s", type);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Unsupported segment type %s", type);
 
   if (grub_json_getuint64 (&out->offset, segment, "offset") ||
       grub_json_getstring (&out->size, segment, "size") ||
       grub_json_getstring (&out->encryption, segment, "encryption") ||
       grub_json_getint64 (&out->sector_size, segment, "sector_size"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing segment parameters");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing segment parameters");
 
   return GRUB_ERR_NONE;
 }
@@ -214,9 +216,9 @@ luks2_parse_digest (grub_luks2_digest_t *out, const grub_json_t *digest)
   const char *type;
 
   if (grub_json_getstring (&type, digest, "type"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid digest type");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid digest type");
   else if (grub_strcmp (type, "pbkdf2"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported digest type %s", type);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Unsupported digest type %s", type);
 
   if (grub_json_getvalue (&segments, digest, "segments") ||
       grub_json_getvalue (&keyslots, digest, "keyslots") ||
@@ -224,10 +226,10 @@ luks2_parse_digest (grub_luks2_digest_t *out, const grub_json_t *digest)
       grub_json_getstring (&out->digest, digest, "digest") ||
       grub_json_getstring (&out->hash, digest, "hash") ||
       grub_json_getint64 (&out->iterations, digest, "iterations"))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Missing digest parameters");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Missing digest parameters");
 
   if (grub_json_getsize (&size, &segments))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT,
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT,
 		       "Digest references no segments");
 
   out->segments = 0;
@@ -235,12 +237,12 @@ luks2_parse_digest (grub_luks2_digest_t *out, const grub_json_t *digest)
     {
       if (grub_json_getchild (&o, &segments, i) ||
 	  grub_json_getuint64 (&bit, &o, NULL))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid segment");
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid segment");
       out->segments |= (1 << bit);
     }
 
   if (grub_json_getsize (&size, &keyslots))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT,
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT,
 		       "Digest references no keyslots");
 
   out->keyslots = 0;
@@ -248,7 +250,7 @@ luks2_parse_digest (grub_luks2_digest_t *out, const grub_json_t *digest)
     {
       if (grub_json_getchild (&o, &keyslots, i) ||
 	  grub_json_getuint64 (&bit, &o, NULL))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid keyslot");
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid keyslot");
       out->keyslots |= (1 << bit);
     }
 
@@ -269,43 +271,43 @@ luks2_get_keyslot (grub_luks2_keyslot_t *k, grub_luks2_digest_t *d, grub_luks2_s
       grub_json_getuint64 (&keyslot_key, &keyslot, NULL) ||
       grub_json_getchild (&keyslot, &keyslot, 0) ||
       luks2_parse_keyslot (k, &keyslot))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Could not parse keyslot index %"PRIuGRUB_SIZE, keyslot_idx);
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Could not parse keyslot index %"PRIuGRUB_SIZE, keyslot_idx);
 
   /* Get digest that matches the keyslot. */
   if (grub_json_getvalue (&digests, root, "digests") ||
       grub_json_getsize (&size, &digests))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Could not get digests");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Could not get digests");
   for (i = 0; i < size; i++)
     {
       if (grub_json_getchild (&digest, &digests, i) ||
 	  grub_json_getuint64 (&digest_key, &digest, NULL) ||
           grub_json_getchild (&digest, &digest, 0) ||
           luks2_parse_digest (d, &digest))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Could not parse digest index %"PRIuGRUB_SIZE, i);
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Could not parse digest index %"PRIuGRUB_SIZE, i);
 
       if ((d->keyslots & (1 << keyslot_key)))
 	break;
     }
   if (i == size)
-      return grub_error (GRUB_ERR_FILE_NOT_FOUND, "No digest for keyslot \"%"PRIuGRUB_UINT64_T"\"", keyslot_key);
+      return luks2_derror (GRUB_ERR_FILE_NOT_FOUND, "No digest for keyslot \"%"PRIuGRUB_UINT64_T"\"", keyslot_key);
 
   /* Get segment that matches the digest. */
   if (grub_json_getvalue (&segments, root, "segments") ||
       grub_json_getsize (&size, &segments))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Could not get segments");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Could not get segments");
   for (i = 0; i < size; i++)
     {
       if (grub_json_getchild (&segment, &segments, i) ||
 	  grub_json_getuint64 (&segment_key, &segment, NULL) ||
 	  grub_json_getchild (&segment, &segment, 0) ||
           luks2_parse_segment (s, &segment))
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Could not parse segment index %"PRIuGRUB_SIZE, i);
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Could not parse segment index %"PRIuGRUB_SIZE, i);
 
       if ((d->segments & (1 << segment_key)))
 	break;
     }
   if (i == size)
-    return grub_error (GRUB_ERR_FILE_NOT_FOUND, "No segment for digest \"%"PRIuGRUB_UINT64_T"\"", digest_key);
+    return luks2_derror (GRUB_ERR_FILE_NOT_FOUND, "No segment for digest \"%"PRIuGRUB_UINT64_T"\"", digest_key);
 
   return GRUB_ERR_NONE;
 }
@@ -404,14 +406,14 @@ luks2_verify_key (grub_luks2_digest_t *d, grub_uint8_t *candidate_key,
 
   /* Decode both digest and salt */
   if (!base64_decode (d->digest, grub_strlen (d->digest), (char *)digest, &digestlen))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid digest");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid digest");
   if (!base64_decode (d->salt, grub_strlen (d->salt), (char *)salt, &saltlen))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid digest salt");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid digest salt");
 
   /* Configure the hash used for the digest. */
   hash = grub_crypto_lookup_md_by_name (d->hash);
   if (!hash)
-    return grub_error (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash", d->hash);
+    return luks2_derror (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash", d->hash);
 
   /* Calculate the candidate key's digest */
   gcry_ret = grub_crypto_pbkdf2 (hash,
@@ -420,11 +422,11 @@ luks2_verify_key (grub_luks2_digest_t *d, grub_uint8_t *candidate_key,
 				 d->iterations,
 				 candidate_digest, digestlen);
   if (gcry_ret)
-    return grub_error (grub_crypto_gcry_error (gcry_ret),
-		       "grub_crypto_pbkdf2 failed with code %d", gcry_ret);
+    return luks2_derror (grub_crypto_gcry_error (gcry_ret),
+			 "grub_crypto_pbkdf2 failed with code %d", gcry_ret);
 
   if (grub_memcmp (candidate_digest, digest, digestlen) != 0)
-    return grub_error (GRUB_ERR_ACCESS_DENIED, "Mismatching digests");
+    return luks2_derror (GRUB_ERR_ACCESS_DENIED, "Mismatching digests");
 
   return GRUB_ERR_NONE;
 }
@@ -446,18 +448,18 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 
   if (!base64_decode (k->kdf.salt, grub_strlen (k->kdf.salt),
 		     (char *)salt, &saltlen))
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid keyslot salt");
+    return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid keyslot salt");
 
   /* Calculate the binary area key of the user supplied passphrase. */
   switch (k->kdf.type)
     {
       case LUKS2_KDF_TYPE_ARGON2I:
-	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Argon2 not supported");
+	return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Argon2 not supported");
       case LUKS2_KDF_TYPE_PBKDF2:
 	hash = grub_crypto_lookup_md_by_name (k->kdf.u.pbkdf2.hash);
 	if (!hash)
-	  return grub_error (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash",
-			    k->kdf.u.pbkdf2.hash);
+	  return luks2_derror (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash",
+			       k->kdf.u.pbkdf2.hash);
 
 	gcry_ret = grub_crypto_pbkdf2 (hash, (grub_uint8_t *) passphrase,
 				       passphraselen,
@@ -465,8 +467,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 				       k->kdf.u.pbkdf2.iterations,
 				       area_key, k->area.key_size);
 	if (gcry_ret)
-	  return grub_error (grub_crypto_gcry_error (gcry_ret),
-			     "grub_crypto_pbkdf2 failed with code %d", gcry_ret);
+	  return luks2_derror (grub_crypto_gcry_error (gcry_ret),
+			       "grub_crypto_pbkdf2 failed with code %d", gcry_ret);
 
 	break;
     }
@@ -475,17 +477,20 @@ luks2_decrypt_key (grub_uint8_t *out_key,
   grub_strncpy (cipher, k->area.encryption, sizeof (cipher));
   p = grub_memchr (cipher, '-', grub_strlen (cipher));
   if (!p)
-      return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid encryption");
+      return luks2_derror (GRUB_ERR_BAD_ARGUMENT, "Invalid encryption");
   *p = '\0';
 
   ret = grub_cryptodisk_setcipher (crypt, cipher, p + 1);
   if (ret)
+    {
+      grub_dprintf ("luks2", "grub_cryptodisk_setcipher failed[%d]: %s\n", ret, grub_errmsg);
       return ret;
+    }
 
   gcry_ret = grub_cryptodisk_setkey (crypt, area_key, k->area.key_size);
   if (gcry_ret)
-    return grub_error (grub_crypto_gcry_error (gcry_ret),
-		       "grub_cryptodisk_setkey failed with code %d", gcry_ret);
+    return luks2_derror (grub_crypto_gcry_error (gcry_ret),
+			 "grub_cryptodisk_setkey failed with code %d", gcry_ret);
 
  /* Read and decrypt the binary key area with the area key. */
   split_key = grub_malloc (k->area.size);
@@ -506,7 +511,7 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 
   if (ret)
     {
-      grub_error (GRUB_ERR_IO, "Read error: %s\n", grub_errmsg);
+      luks2_derror (GRUB_ERR_IO, "Read error: %s\n", grub_errmsg);
       goto err;
     }
 
@@ -518,8 +523,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 				      LUKS_LOG_SECTOR_SIZE);
   if (gcry_ret)
     {
-      ret = grub_error (grub_crypto_gcry_error (gcry_ret),
-			"grub_cryptodisk_decrypt failed with code %d", gcry_ret);
+      ret = luks2_derror (grub_crypto_gcry_error (gcry_ret),
+			  "grub_cryptodisk_decrypt failed with code %d", gcry_ret);
       goto err;
     }
 
@@ -527,8 +532,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
   hash = grub_crypto_lookup_md_by_name (k->af.hash);
   if (!hash)
     {
-      ret = grub_error (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash",
-			k->af.hash);
+      ret = luks2_derror (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash",
+			  k->af.hash);
       goto err;
     }
 
@@ -536,8 +541,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
   gcry_ret = AF_merge (hash, split_key, out_key, k->key_size, k->af.stripes);
   if (gcry_ret)
     {
-      ret = grub_error (grub_crypto_gcry_error (gcry_ret),
-			"AF_merge failed with code %d", gcry_ret);
+      ret = luks2_derror (grub_crypto_gcry_error (gcry_ret),
+			  "AF_merge failed with code %d", gcry_ret);
       goto err;
     }
 
