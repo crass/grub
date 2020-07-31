@@ -2110,7 +2110,7 @@ grub_cmd_openbsd_ramdisk (grub_command_t cmd __attribute__ ((unused)),
     {
       grub_file_close (file);
       return grub_error (GRUB_ERR_BAD_OS, "your kOpenBSD supports ramdisk only"
-			 " up to %u bytes, however you supplied a %u bytes one",
+			 " up to %lu bytes, however you supplied a %lu bytes one",
 			 openbsd_ramdisk.max_size, size);
     }
 

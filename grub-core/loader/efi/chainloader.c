@@ -90,7 +90,7 @@ grub_chainloader_boot (void)
 	      *grub_utf16_to_utf8 ((grub_uint8_t *) buf,
 				   exit_data, exit_data_size) = 0;
 
-	      grub_error (GRUB_ERR_BAD_OS, buf);
+	      grub_error (GRUB_ERR_BAD_OS, "%s", buf);
 	      grub_free (buf);
 	    }
 	}
@@ -164,7 +164,7 @@ make_file_path (grub_efi_device_path_t *dp, const char *filename)
       if (len < 4)
 	{
 	  grub_error (GRUB_ERR_OUT_OF_RANGE,
-		      "malformed EFI Device Path node has length=%d", len);
+		      "malformed EFI Device Path node has length=%ld", len);
 	  return NULL;
 	}
 

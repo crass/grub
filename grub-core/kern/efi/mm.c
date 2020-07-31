@@ -127,7 +127,7 @@ grub_efi_allocate_pages_real (grub_efi_physical_address_t address,
   if (address > GRUB_EFI_MAX_USABLE_ADDRESS)
     {
       grub_error (GRUB_ERR_BAD_ARGUMENT,
-		  N_("invalid memory address (0x%llx > 0x%llx)"),
+		  N_("invalid memory address (0x%lx > 0x%x)"),
 		  address, GRUB_EFI_MAX_USABLE_ADDRESS);
       return NULL;
     }

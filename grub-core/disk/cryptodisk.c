@@ -473,13 +473,13 @@ grub_cryptodisk_setcipher (grub_cryptodisk_t crypt, const char *ciphername, cons
       }
       if (cipher->cipher->blocksize != GRUB_CRYPTODISK_GF_BYTES)
 	{
-	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported XTS block size: %d",
+	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported XTS block size: %ld",
 			    cipher->cipher->blocksize);
 	  goto err;
 	}
       if (secondary_cipher->cipher->blocksize != GRUB_CRYPTODISK_GF_BYTES)
 	{
-	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported XTS block size: %d",
+	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported XTS block size: %ld",
 			    secondary_cipher->cipher->blocksize);
 	  goto err;
 	}
@@ -490,7 +490,7 @@ grub_cryptodisk_setcipher (grub_cryptodisk_t crypt, const char *ciphername, cons
       cipheriv = ciphermode + sizeof ("lrw-") - 1;
       if (cipher->cipher->blocksize != GRUB_CRYPTODISK_GF_BYTES)
 	{
-	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported LRW block size: %d",
+	  ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported LRW block size: %ld",
 			    cipher->cipher->blocksize);
 	  goto err;
 	}
@@ -512,7 +512,7 @@ grub_cryptodisk_setcipher (grub_cryptodisk_t crypt, const char *ciphername, cons
     {
       if (cipher->cipher->blocksize & (cipher->cipher->blocksize - 1)
 	  || cipher->cipher->blocksize == 0)
-	grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported benbi blocksize: %d",
+	grub_error (GRUB_ERR_BAD_ARGUMENT, "Unsupported benbi blocksize: %ld",
 		    cipher->cipher->blocksize);
 	/* FIXME should we return an error here? */
       for (benbi_log = 0;

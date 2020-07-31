@@ -188,7 +188,7 @@ grub_hfsplus_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
 	  || !nnode)
 	{
 	  grub_error (GRUB_ERR_READ_ERROR,
-		      "no block found for the file id 0x%x and the block offset 0x%x",
+		      "no block found for the file id 0x%x and the block offset 0x%lx",
 		      node->fileid, fileblock);
 	  break;
 	}
