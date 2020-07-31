@@ -595,13 +595,21 @@ luks2_recover_key (grub_disk_t source,
     {
       ret = luks2_get_keyslot (&keyslot, &digest, &segment, json, i);
       if (ret)
-	goto err;
+	{
+	  /*
+	   * luks2_get_keyslot can fail for a variety of reasons that do not
+	   * neccesarily mean the next keyslot should not be tried (eg. a new
+	   * kdf type). So always try the next slot.
+	   */
+	  grub_dprintf ("luks2", "Failed to get keyslot %"PRIuGRUB_SIZE"\n", i);
+	  continue;
+	}
 
       if (keyslot.priority == 0)
 	{
 	  grub_dprintf ("luks2", "Ignoring keyslot %"PRIuGRUB_SIZE" due to priority\n", i);
 	  continue;
-        }
+	}
 
       grub_dprintf ("luks2", "Trying keyslot %"PRIuGRUB_SIZE"\n", i);
 
