@@ -401,7 +401,8 @@ luks2_verify_key (grub_luks2_digest_t *d, grub_uint8_t *candidate_key,
 				 d->iterations,
 				 candidate_digest, digestlen);
   if (gcry_ret)
-    return grub_crypto_gcry_error (gcry_ret);
+    return grub_error (grub_crypto_gcry_error (gcry_ret),
+		       "grub_crypto_pbkdf2 failed with code %d", gcry_ret);
 
   if (grub_memcmp (candidate_digest, digest, digestlen) != 0)
     return grub_error (GRUB_ERR_ACCESS_DENIED, "Mismatching digests");
@@ -445,7 +446,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 				       k->kdf.u.pbkdf2.iterations,
 				       area_key, k->area.key_size);
 	if (gcry_ret)
-	  return grub_crypto_gcry_error (gcry_ret);
+	  return grub_error (grub_crypto_gcry_error (gcry_ret),
+			     "grub_crypto_pbkdf2 failed with code %d", gcry_ret);
 
 	break;
     }
@@ -463,7 +465,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 
   gcry_ret = grub_cryptodisk_setkey (crypt, area_key, k->area.key_size);
   if (gcry_ret)
-    return grub_crypto_gcry_error (gcry_ret);
+    return grub_error (grub_crypto_gcry_error (gcry_ret),
+		       "grub_cryptodisk_setkey failed with code %d", gcry_ret);
 
  /* Read and decrypt the binary key area with the area key. */
   split_key = grub_malloc (k->area.size);
@@ -486,7 +489,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 				      LUKS_LOG_SECTOR_SIZE);
   if (gcry_ret)
     {
-      ret = grub_crypto_gcry_error (gcry_ret);
+      ret = grub_error (grub_crypto_gcry_error (gcry_ret),
+			"grub_cryptodisk_decrypt failed with code %d", gcry_ret);
       goto err;
     }
 
@@ -503,7 +507,8 @@ luks2_decrypt_key (grub_uint8_t *out_key,
   gcry_ret = AF_merge (hash, split_key, out_key, k->key_size, k->af.stripes);
   if (gcry_ret)
     {
-      ret = grub_crypto_gcry_error (gcry_ret);
+      ret = grub_error (grub_crypto_gcry_error (gcry_ret),
+			"AF_merge failed with code %d", gcry_ret);
       goto err;
     }
 
@@ -656,7 +661,8 @@ luks2_recover_key (grub_disk_t source,
   gcry_ret = grub_cryptodisk_setkey (crypt, candidate_key, candidate_key_len);
   if (gcry_ret)
     {
-      ret = grub_crypto_gcry_error (gcry_ret);
+      ret = grub_error (grub_crypto_gcry_error (gcry_ret),
+			"grub_cryptodisk_setkey failed with code %d", gcry_ret);
       goto err;
     }
 
