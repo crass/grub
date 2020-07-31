@@ -426,25 +426,18 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 
   if (!base64_decode (k->kdf.salt, grub_strlen (k->kdf.salt),
 		     (char *)salt, &saltlen))
-    {
-      ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid keyslot salt");
-      goto err;
-    }
+    return grub_error (GRUB_ERR_BAD_ARGUMENT, "Invalid keyslot salt");
 
   /* Calculate the binary area key of the user supplied passphrase. */
   switch (k->kdf.type)
     {
       case LUKS2_KDF_TYPE_ARGON2I:
-	ret = grub_error (GRUB_ERR_BAD_ARGUMENT, "Argon2 not supported");
-	goto err;
+	return grub_error (GRUB_ERR_BAD_ARGUMENT, "Argon2 not supported");
       case LUKS2_KDF_TYPE_PBKDF2:
 	hash = grub_crypto_lookup_md_by_name (k->kdf.u.pbkdf2.hash);
 	if (!hash)
-	  {
-	    ret = grub_error (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash",
-			      k->kdf.u.pbkdf2.hash);
-	    goto err;
-	  }
+	  return grub_error (GRUB_ERR_FILE_NOT_FOUND, "Couldn't load %s hash",
+			    k->kdf.u.pbkdf2.hash);
 
 	gcry_ret = grub_crypto_pbkdf2 (hash, (grub_uint8_t *) passphrase,
 				       passphraselen,
@@ -452,10 +445,7 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 				       k->kdf.u.pbkdf2.iterations,
 				       area_key, k->area.key_size);
 	if (gcry_ret)
-	  {
-	    ret = grub_crypto_gcry_error (gcry_ret);
-	    goto err;
-	  }
+	  return grub_crypto_gcry_error (gcry_ret);
 
 	break;
     }
@@ -473,18 +463,12 @@ luks2_decrypt_key (grub_uint8_t *out_key,
 
   gcry_ret = grub_cryptodisk_setkey (crypt, area_key, k->area.key_size);
   if (gcry_ret)
-    {
-      ret = grub_crypto_gcry_error (gcry_ret);
-      goto err;
-    }
+    return grub_crypto_gcry_error (gcry_ret);
 
  /* Read and decrypt the binary key area with the area key. */
   split_key = grub_malloc (k->area.size);
   if (!split_key)
-    {
-      ret = grub_errno;
-      goto err;
-    }
+    return grub_errno;
 
   grub_errno = GRUB_ERR_NONE;
   ret = grub_disk_read (source, 0, k->area.offset, k->area.size, split_key);
