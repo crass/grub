@@ -59,8 +59,8 @@ grub_rescue_parse_line (char *line,
   /* Get the command name.  */
   name = args[0];
 
-  /* If nothing is specified, restart.  */
-  if (*name == '\0')
+  /* If nothing is specified or a comment, restart.  */
+  if (*name == '\0' || *name == '#')
     goto quit;
 
   cmd = grub_command_find (name);
