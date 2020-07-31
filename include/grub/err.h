@@ -20,6 +20,7 @@
 #ifndef GRUB_ERR_HEADER
 #define GRUB_ERR_HEADER	1
 
+#include <stdarg.h>
 #include <grub/symbol.h>
 #include <grub/compiler.h>
 
@@ -85,8 +86,7 @@ struct grub_error_saved
 extern grub_err_t EXPORT_VAR(grub_errno);
 extern char EXPORT_VAR(grub_errmsg)[GRUB_MAX_ERRMSG];
 
-grub_err_t EXPORT_FUNC(grub_error) (grub_err_t n, const char *fmt, ...)
-    __attribute__ ((format (GNU_PRINTF, 2, 3)));
+grub_err_t EXPORT_FUNC(grub_verror) (grub_err_t n, const char *fmt, va_list ap);
 void EXPORT_FUNC(grub_fatal) (const char *fmt, ...) __attribute__ ((noreturn));
 void EXPORT_FUNC(grub_error_push) (void);
 int EXPORT_FUNC(grub_error_pop) (void);
@@ -94,5 +94,19 @@ void EXPORT_FUNC(grub_print_error) (void);
 extern int EXPORT_VAR(grub_err_printed_errors);
 int grub_err_printf (const char *fmt, ...)
      __attribute__ ((format (GNU_PRINTF, 1, 2)));
+
+static inline grub_err_t grub_error (grub_err_t n, const char *fmt, ...)
+    __attribute__ ((format (GNU_PRINTF, 2, 3)));
+
+static inline grub_err_t
+grub_error (grub_err_t n, const char *fmt, ...)
+{
+  va_list ap;
+  va_start (ap, fmt);
+  grub_verror(n, fmt, ap);
+  va_end (ap);
+
+  return n;
+}
 
 #endif /* ! GRUB_ERR_HEADER */

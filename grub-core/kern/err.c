@@ -34,15 +34,11 @@ static int grub_error_stack_pos;
 static int grub_error_stack_assert;
 
 grub_err_t
-grub_error (grub_err_t n, const char *fmt, ...)
+grub_verror (grub_err_t n, const char *fmt, va_list ap)
 {
-  va_list ap;
-
   grub_errno = n;
 
-  va_start (ap, fmt);
   grub_vsnprintf (grub_errmsg, sizeof (grub_errmsg), _(fmt), ap);
-  va_end (ap);
 
   return n;
 }
