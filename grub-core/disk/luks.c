@@ -113,7 +113,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
   newdev->source_disk = NULL;
   newdev->log_sector_size = LUKS_LOG_SECTOR_SIZE;
   newdev->total_length = grub_disk_get_size (disk) - newdev->offset;
-  grub_memcpy (newdev->uuid, header.uuid, sizeof (newdev->uuid));
+  grub_memcpy (newdev->uuid, header.uuid, sizeof (header.uuid));
   newdev->modname = "luks";
 
   /* Configure the hash used for the AF splitter and HMAC.  */
