@@ -234,6 +234,9 @@ grub_cryptodisk_endecrypt (struct grub_cryptodisk *dev,
   grub_size_t i;
   gcry_err_code_t err;
 
+  if (dev->mode_iv & GRUB_CRYPTODISK_MODE_IV_LARGE)
+    return GPG_ERR_NOT_IMPLEMENTED;
+
   if (dev->cipher->cipher->blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)
     return GPG_ERR_INV_ARG;
 
@@ -263,7 +266,7 @@ grub_cryptodisk_endecrypt (struct grub_cryptodisk *dev,
 	}
 
       grub_memset (iv, 0, sizeof (iv));
-      switch (dev->mode_iv)
+      switch (dev->mode_iv & GRUB_CRYPTODISK_MODE_IV_MASK)
 	{
 	case GRUB_CRYPTODISK_MODE_IV_NULL:
 	  break;
@@ -1339,6 +1342,8 @@ luks_script_get (grub_size_t *sz)
 	if (i->essiv_hash)
 	  size += grub_strlen (i->essiv_hash->name);
 	size += i->keysize * 2;
+       if (i->mode_iv == GRUB_CRYPTODISK_MODE_IV_LARGE)
+	 size += sizeof (" iv_large");
       }
 
   ret = grub_malloc (sizeof (header) + size + 1);
@@ -1383,7 +1388,7 @@ luks_script_get (grub_size_t *sz)
 	    break;
 	  }
 
-	switch (i->mode_iv)
+	switch (i->mode_iv & GRUB_CRYPTODISK_MODE_IV_MASK)
 	  {
 	  case GRUB_CRYPTODISK_MODE_IV_NULL:
 	    ptr = grub_stpcpy (ptr, "-null"); 
@@ -1411,6 +1416,9 @@ luks_script_get (grub_size_t *sz)
 	    *ptr++ = hex (i->key[j] >> 4);
 	    *ptr++ = hex (i->key[j] & 0xf);
 	  }
+
+	if (i->mode_iv == GRUB_CRYPTODISK_MODE_IV_LARGE)
+	  ptr = grub_stpcpy (ptr, " iv_large");
 	*ptr++ = '\n';
       }
   *ptr = '\0';
