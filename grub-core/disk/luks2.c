@@ -366,7 +366,7 @@ luks2_scan (grub_disk_t disk, const char *check_uuid, int check_boot)
   if (!cryptodisk)
     return NULL;
 
-  COMPILE_TIME_ASSERT (sizeof (cryptodisk->uuid) >= sizeof (header.uuid));
+  COMPILE_TIME_ASSERT (sizeof (cryptodisk->uuid) > sizeof (header.uuid));
 
   grub_memcpy (cryptodisk->uuid, header.uuid, sizeof (header.uuid));
   cryptodisk->modname = "luks2";
