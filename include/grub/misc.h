@@ -37,6 +37,15 @@
 
 #define grub_dprintf(condition, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, __VA_ARGS__)
 
+static inline unsigned int
+grub_abs (int x)
+{
+  if (x < 0)
+    return (unsigned int) (-x);
+  else
+    return (unsigned int) x;
+}
+
 void *EXPORT_FUNC(grub_memmove) (void *dest, const void *src, grub_size_t n);
 char *EXPORT_FUNC(grub_strcpy) (char *dest, const char *src);
 
@@ -403,16 +412,6 @@ grub_memchr (const void *p, int c, grub_size_t len)
       return (char *) s;
 
   return 0;
-}
-
-
-static inline unsigned int
-grub_abs (int x)
-{
-  if (x < 0)
-    return (unsigned int) (-x);
-  else
-    return (unsigned int) x;
 }
 
 /* Reboot the machine.  */
