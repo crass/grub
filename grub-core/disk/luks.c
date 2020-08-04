@@ -94,7 +94,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
 
   if (check_uuid && grub_uuidcasecmp (check_uuid, header.uuid, sizeof (header.uuid)) != 0)
     {
-      grub_dprintf ("luks", "%s != %s\n", header.uuid, check_uuid);
+      grub_dprintf ("luks", "%*s != %s\n", (int)sizeof (header.uuid), header.uuid, check_uuid);
       return NULL;
     }
 
