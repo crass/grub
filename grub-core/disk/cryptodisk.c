@@ -1030,7 +1030,7 @@ grub_cryptodisk_scan_device_real (const char *name, grub_disk_t source)
 
     return GRUB_ERR_NONE;
   }
-  return GRUB_ERR_NONE;
+  return GRUB_ERR_UNKNOWN_DEVICE;
 }
 
 #ifdef GRUB_UTIL
