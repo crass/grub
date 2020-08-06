@@ -41,6 +41,7 @@ static const struct grub_arg_option options[] =
     /* TRANSLATORS: It's still restricted to cryptodisks only.  */
     {"all", 'a', 0, N_("Mount all."), 0, 0},
     {"boot", 'b', 0, N_("Mount all volumes with `boot' flag set."), 0, 0},
+    {"password", 'p', 0, N_("Password to open volumes."), 0, ARG_TYPE_STRING},
     {"header", 'H', 0, N_("Read header from file"), 0, ARG_TYPE_STRING},
     {"keyfile", 'k', 0, N_("Key file"), 0, ARG_TYPE_STRING},
     {"keyfile-offset", 'O', 0, N_("Key file offset (bytes)"), 0, ARG_TYPE_INT},
@@ -1112,13 +1113,13 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
   if (argc < 1 && !state[1].set && !state[2].set)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, "device name required");
 
-  if (state[3].set) /* Detached header */
+  if (state[4].set) /* Detached header */
     {
       if (state[0].set)
 	return grub_error (GRUB_ERR_BAD_ARGUMENT,
 			   N_("Cannot use UUID lookup with detached header"));
 
-      hdr = grub_file_open (state[3].arg,
+      hdr = grub_file_open (state[4].arg,
 			    GRUB_FILE_TYPE_CRYPTODISK_DETACHED_HEADER);
       if (!hdr)
 	return grub_errno;
@@ -1129,7 +1130,12 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
   have_it = 0;
   key = NULL;
 
-  if (state[4].set) /* keyfile */
+  if (state[3].set) /* password */
+    {
+      key = (grub_uint8_t *) state[3].arg;
+      key_size = grub_strlen(state[3].arg);
+    }
+  else if (state[5].set) /* keyfile */
     {
       const char *p = NULL;
       grub_file_t keyfile;
@@ -1137,9 +1143,9 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
       grub_size_t requested_keyfile_size = 0;
 
 
-      if (state[5].set) /* keyfile-offset */
+      if (state[6].set) /* keyfile-offset */
 	{
-	  keyfile_offset = grub_strtoul (state[5].arg, &p, 0);
+	  keyfile_offset = grub_strtoul (state[6].arg, &p, 0);
 
 	  if (grub_errno != GRUB_ERR_NONE)
 	    return grub_errno;
@@ -1153,9 +1159,9 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
 	  keyfile_offset = 0;
 	}
 
-      if (state[6].set) /* keyfile-size */
+      if (state[7].set) /* keyfile-size */
 	{
-	  requested_keyfile_size = grub_strtoul (state[6].arg, &p, 0);
+	  requested_keyfile_size = grub_strtoul (state[7].arg, &p, 0);
 
 	  if (*p != '\0')
 	    return grub_error (GRUB_ERR_BAD_ARGUMENT,
@@ -1175,7 +1181,7 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
 			      N_("Key file size is 0\n"));
 	}
 
-      keyfile = grub_file_open (state[4].arg,
+      keyfile = grub_file_open (state[5].arg,
 				GRUB_FILE_TYPE_CRYPTODISK_ENCRYPTION_KEY);
       if (!keyfile)
 	return grub_errno;
@@ -1207,7 +1213,7 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
       key = keyfile_buffer;
     }
 
-  if (state[0].set)
+  if (state[0].set) /* -u uuid */
     {
       grub_cryptodisk_t dev;
 
@@ -1228,7 +1234,7 @@ grub_cmd_cryptomount (grub_extcmd_context_t ctxt, int argc, char **args)
 	return grub_error (GRUB_ERR_BAD_ARGUMENT, "no such cryptodisk found");
       return GRUB_ERR_NONE;
     }
-  else if (state[1].set || (argc == 0 && state[2].set))
+  else if (state[1].set || (argc == 0 && state[2].set)) /* -a || -b */
     {
       search_uuid = NULL;
       check_boot = state[2].set;
@@ -1438,8 +1444,8 @@ GRUB_MOD_INIT (cryptodisk)
 {
   grub_disk_dev_register (&grub_cryptodisk_dev);
   cmd = grub_register_extcmd ("cryptomount", grub_cmd_cryptomount, 0,
-			      N_("SOURCE [-H file] [-k keyfile] [-O keyoffset]"
-				 " [-S keysize]|-u UUID|-a|-b"),
+			      N_("SOURCE [-H file] [-k keyfile|-p password] "
+				 "[-O keyoffset] [-S keysize]|-u UUID|-a|-b"),
 			      N_("Mount a crypto device."), options);
   grub_procfs_register ("luks_script", &luks_script);
 }
