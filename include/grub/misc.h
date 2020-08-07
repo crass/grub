@@ -37,6 +37,9 @@
 
 #define grub_dprintf(condition, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, __VA_ARGS__)
 
+#define grub_max(a, b) (((a) > (b)) ? (a) : (b))
+#define grub_min(a, b) (((a) < (b)) ? (a) : (b))
+
 static inline unsigned int
 grub_abs (int x)
 {
@@ -546,8 +549,5 @@ void EXPORT_FUNC(grub_real_boot_time) (const char *file,
 #else
 #define grub_boot_time(...)
 #endif
-
-#define grub_max(a, b) (((a) > (b)) ? (a) : (b))
-#define grub_min(a, b) (((a) < (b)) ? (a) : (b))
 
 #endif /* ! GRUB_MISC_HEADER */
