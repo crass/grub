@@ -827,7 +827,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
 	    NASTYFILE=".?*\\!\"#%@\$%&'()+ ,-.:;<=>^{_}[]\`|~."
 	    case x"$fs" in
 
- 	            # FS LIMITATION: AFFS and SFS don't accept :
+	            # FS LIMITATION: AFFS and SFS don't accept :
 		xsfs*)
 		    NASTYFILE=".?*\\!\"#%@\$%&'()+ ,-.;<=>^{_}[]\`|~.";;
 	            # FS LIMITATION: AFFS is limited in file name length (30)
@@ -853,7 +853,7 @@ for LOGSECSIZE in $(range "$MINLOGSECSIZE" "$MAXLOGSECSIZE" 1); do
 	    esac
 
 	    case x"$fs" in
- 	            # FS LIMITATION: HFS, AFFS and SFS use legacy codepage (mac-roman or latin1)
+	            # FS LIMITATION: HFS, AFFS and SFS use legacy codepage (mac-roman or latin1)
 		x"sfs"* | x"hfs" | x"affs" | xaffs_intl)
 		    IFILE="éàèüöäëñ"
 		    ISYM="ëñéüöäàè"
