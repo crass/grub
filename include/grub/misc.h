@@ -219,22 +219,7 @@ grub_toupper (int c)
   return c;
 }
 
-static inline int
-grub_strcasecmp (const char *s1, const char *s2)
-{
-  while (*s1 && *s2)
-    {
-      if (grub_tolower ((grub_uint8_t) *s1)
-	  != grub_tolower ((grub_uint8_t) *s2))
-	break;
-
-      s1++;
-      s2++;
-    }
-
-  return (int) grub_tolower ((grub_uint8_t) *s1)
-    - (int) grub_tolower ((grub_uint8_t) *s2);
-}
+#define grub_strcasecmp(s1, s2) grub_strncasecmp(s1, s2, -1)
 
 static inline int
 grub_strncasecmp (const char *s1, const char *s2, grub_size_t n)
