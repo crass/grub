@@ -97,7 +97,7 @@ int EXPORT_FUNC(grub_strncmp) (const char *s1, const char *s2, grub_size_t n);
 
 char *EXPORT_FUNC(grub_strchr) (const char *s, int c);
 char *EXPORT_FUNC(grub_strrchr) (const char *s, int c);
-int EXPORT_FUNC(grub_strword) (const char *s, const char *w);
+char *EXPORT_FUNC(grub_strword) (const char *s, const char *w);
 
 /* Copied from gnulib.
    Written by Bruno Haible <bruno@clisp.org>, 2005. */

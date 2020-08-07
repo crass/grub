@@ -307,7 +307,7 @@ grub_strrchr (const char *s, int c)
   return p;
 }
 
-int
+char *
 grub_strword (const char *haystack, const char *needle)
 {
   const char *n_pos = needle;
@@ -330,7 +330,7 @@ grub_strword (const char *haystack, const char *needle)
       next word (or the end of string) and "reset" the needle.  */
       if ( (!*haystack || grub_iswordseparator (*haystack))
          && (!*n_pos || grub_iswordseparator (*n_pos)))
-        return 1;
+        return (char *)(haystack - (n_pos - needle));
       else
         {
           n_pos = needle;
@@ -341,7 +341,7 @@ grub_strword (const char *haystack, const char *needle)
         }
     }
 
-  return 0;
+  return NULL;
 }
 
 int
