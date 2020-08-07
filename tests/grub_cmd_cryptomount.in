@@ -1,0 +1,110 @@
+#! @BUILD_SHEBANG@ -e
+
+# Run GRUB script in a Qemu instance
+# Copyright (C) 2010  Free Software Foundation, Inc.
+#
+# GRUB is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GRUB is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+
+if [ "x$EUID" = "x" ] ; then
+  EUID=`id -u`
+fi
+
+if [ "$EUID" != 0 ] ; then
+   exit 77
+fi
+
+if ! which cryptsetup >/dev/null 2>&1; then
+   echo "cryptsetup not installed; cannot test cryptomount."
+   exit 77
+fi
+
+if ! which mkfs.vfat >/dev/null 2>&1; then
+   echo "mkfs.vfat not installed; cannot test cryptomount."
+   exit 77
+fi
+
+# create a random directory to be hold generated files
+lukstestdir="`mktemp -d "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"`" || exit 1
+luksfile=$lukstestdir/luks.disk
+keyfile=$lukstestdir/luks.key
+vfile=$lukstestdir/mnt/test.verify
+vtext="TEST VERIFIED"
+password=testpass
+
+# 
+truncate -s 20M $luksfile
+
+# Format the luks disk file
+FMTOPTS="--pbkdf-force-iterations 1000"
+echo $password |
+cryptsetup luksFormat -q $FMTOPTS --type luks1 $luksfile || exit 1
+
+# 
+luksdev=/dev/mapper/`basename $lukstestdir`
+echo $password |
+cryptsetup open $luksfile `basename $luksdev` || exit 1
+
+(
+    # Make filesystem on the luks disk
+    mkfs.vfat $luksdev || exit 1
+
+    # Add verification file to filesystem
+    mkdir $lukstestdir/mnt
+    mount $luksdev $lukstestdir/mnt || exit 1
+    echo "$vtext" >$vfile
+    
+    umount $lukstestdir/mnt
+) || {
+    cryptsetup close $luksdev
+    exit 1
+}
+
+# create the key file
+echo -n $password >> $keyfile
+
+. "@builddir@/grub-core/modinfo.sh"
+
+if [ x"${grub_modinfo_platform}" = xemu ]; then
+    grub_file="(host)$file"
+else
+    grub_file="/boot/grub/file"
+fi
+
+
+# Can not use --disk with a raw LUKS container because it appears qemu
+# tries to convert the image to and is failing with:
+#  "Parameter 'key-secret' is required for cipher"
+qemuopts="-drive file=$luksfile,index=0,media=disk,format=raw"
+
+modules="luks"
+
+trim_line=`mktemp -u XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`
+outfile1="`mktemp "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"`" || exit 1
+@builddir@/grub-shell --trim="$trim_line" --qemu-opts="$qemuopts" \
+    --modules="$modules" \
+    --files="$grub_file=$keyfile" >$outfile1 <<EOF
+cryptomount -p "$password" (hd0)
+
+echo "$trim_line"
+if [ $ret = 0 ]; then
+    cat (crypto0)/`basename $vfile`
+else
+    echo "cryptomount failed: $ret"
+fi
+EOF
+ret=$?
+
+if test "`cat $outfile1`" != "$vtext"; then echo "error: test not verified [$v]" >&2; exit 1; fi
+
+exit $ret

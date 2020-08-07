@@ -1040,6 +1040,12 @@ script = {
 
 script = {
   testcase;
+  name = grub_cmd_cryptomount;
+  common = tests/grub_cmd_cryptomount.in;
+};
+
+script = {
+  testcase;
   name = grub_cmd_regexp;
   common = tests/grub_cmd_regexp.in;
 };
