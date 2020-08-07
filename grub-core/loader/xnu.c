@@ -959,7 +959,8 @@ grub_xnu_check_os_bundle_required (char *plistname,
 
   /* Set the return value for the case when no OSBundleRequired tag is found. */
   if (osbundlereq)
-    ret = grub_strword (osbundlereq, "all") || grub_strword (osbundlereq, "-");
+    ret = grub_strword (osbundlereq, "all") != 0
+      || grub_strword (osbundlereq, "-") != 0;
   else
     ret = 1;
 
@@ -980,8 +981,8 @@ grub_xnu_check_os_bundle_required (char *plistname,
 	  {
 	    for (ptr2 = stringptr; *ptr2; ptr2++)
 	      *ptr2 = grub_tolower (*ptr2);
-	    ret = grub_strword (osbundlereq, stringptr)
-	      || grub_strword (osbundlereq, "all");
+	    ret = grub_strword (osbundlereq, stringptr) != 0
+	      || grub_strword (osbundlereq, "all") != 0;
 	  }
 	if (stringptr && binnamekeyfound && binname && depth == 4)
 	  {
