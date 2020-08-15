@@ -743,6 +743,12 @@ script = {
 };
 
 script = {
+  name = grub-shell-luks-tester;
+  common = tests/util/grub-shell-luks-tester.in;
+  installdir = noinst;
+};
+
+script = {
   name = grub-fs-tester;
   common = tests/util/grub-fs-tester.in;
   installdir = noinst;
