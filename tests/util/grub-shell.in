@@ -343,7 +343,7 @@ terminal_output ${term}
 EOF
 
 if [ $trim = 1 ]; then
-    echo "echo $trim_head" >>${cfgfile}
+    echo "echo; echo $trim_head" >>${cfgfile}
 fi
 
 rom_directory=`mktemp -d "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"` || exit 1
@@ -457,7 +457,7 @@ fi
 do_trim ()
 {
     if [ $trim = 1 ] || [ $trim = 2 ]; then
-	awk '{ if (have_head == 1) print $0; } /'"$trim_head"'/ { have_head=1; }'
+	awk '{ if (have_head == 1) print $0; } /^'"$trim_head"'/ { have_head=1; }'
     else
 	cat
     fi
