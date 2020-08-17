@@ -99,10 +99,10 @@ eval testcase_fail "'LUKS1 test both detached header and key file:'" \
 
 ### LUKS2 tests (mirroring the LUKS1 tests above)
 LUKS2_COMMON_OPTS="--luks=2 --cs-opts=--pbkdf=pbkdf2"
-eval testcase_fail "'LUKS2 test cryptsetup defaults:'" \
+eval testcase "'LUKS2 test cryptsetup defaults:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS
 
-eval testcase_fail "'LUKS2 test with twofish cipher:'" \
+eval testcase "'LUKS2 test with twofish cipher:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         "--cs-opts='--cipher twofish-xts-plain64'"
 
@@ -110,15 +110,15 @@ eval testcase_fail "'LUKS2 test detached header support:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         --detached-header
 
-eval testcase_fail "'LUKS2 test key file support:'" \
+eval testcase "'LUKS2 test key file support:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         --keyfile
 
-eval testcase_fail "'LUKS2 test key file with offset:'" \
+eval testcase "'LUKS2 test key file with offset:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         --keyfile --cs-opts="--keyfile-offset=237"
 
-eval testcase_fail "'LUKS2 test key file with offset and size:'" \
+eval testcase "'LUKS2 test key file with offset and size:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         --keyfile "--cs-opts='--keyfile-offset=237 --keyfile-size=1023'"
 
@@ -139,11 +139,11 @@ eval testcase_fail "'LUKS2 test with 4k sector size:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         "--cs-opts='--sector-size 4096'"
 
-eval testcase_fail "'LUKS2 test with non-default key slot:'" \
+eval testcase "'LUKS2 test with non-default key slot:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         "--cs-opts='--key-slot 5'"
 
-eval testcase_fail "'LUKS2 test with different metadata size:'" \
+eval testcase "'LUKS2 test with different metadata size:'" \
     @builddir@/grub-shell-luks-tester $LUKS2_COMMON_OPTS $COMMON_OPTS \
         "--cs-opts='--luks2-metadata-size 512k'"
 
