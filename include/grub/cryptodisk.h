@@ -139,7 +139,7 @@ grub_cryptodisk_setkey (grub_cryptodisk_t dev,
 gcry_err_code_t
 grub_cryptodisk_decrypt (struct grub_cryptodisk *dev,
 			 grub_uint8_t * data, grub_size_t len,
-			 grub_disk_addr_t sector);
+			 grub_disk_addr_t sector, grub_size_t sector_size);
 grub_err_t
 grub_cryptodisk_insert (grub_cryptodisk_t newdev, const char *name,
 			grub_disk_t source);

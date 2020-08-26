@@ -30,6 +30,7 @@
 GRUB_MOD_LICENSE ("GPLv3+");
 
 #define MAX_PASSPHRASE 256
+#define LOG_SECTOR_SIZE 9
 
 #define LUKS_KEY_ENABLED  0x00AC71F3
 
@@ -124,7 +125,7 @@ configure_ciphers (grub_disk_t disk, const char *check_uuid,
       return NULL;
   newdev->offset = grub_be_to_cpu32 (header.payloadOffset);
   newdev->source_disk = NULL;
-  newdev->log_sector_size = 9;
+  newdev->log_sector_size = LOG_SECTOR_SIZE;
   newdev->total_length = grub_disk_get_size (disk) - newdev->offset;
   grub_memcpy (newdev->uuid, uuid, sizeof (uuid));
   newdev->modname = "luks";
@@ -247,7 +248,7 @@ luks_recover_key (grub_disk_t source,
 	  return err;
 	}
 
-      gcry_err = grub_cryptodisk_decrypt (dev, split_key, length, 0);
+      gcry_err = grub_cryptodisk_decrypt (dev, split_key, length, 0, LOG_SECTOR_SIZE);
       if (gcry_err)
 	{
 	  grub_free (split_key);

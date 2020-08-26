@@ -492,7 +492,11 @@ luks2_decrypt_key (grub_uint8_t *out_key,
       goto err;
     }
 
-  gcry_ret = grub_cryptodisk_decrypt (crypt, split_key, k->area.size, 0);
+  /*
+   * The encrypted key slots are always with 512byte sectors,
+   * regardless of encrypted data sector size
+   */
+  gcry_ret = grub_cryptodisk_decrypt (crypt, split_key, k->area.size, 0, 9);
   if (gcry_ret)
     {
       ret = grub_crypto_gcry_error (gcry_ret);
